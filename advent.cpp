@@ -1,8 +1,10 @@
 #include "day.hpp"
+#include "timing.hpp"
 
 #include <algorithm>
 #include <charconv>
 #include <iterator>
+#include <print>
 #include <ranges>
 #include <span>
 #include <utility>
@@ -17,28 +19,34 @@ constexpr static inline auto absdiff =
 using day01_parsed = std::vector<std::pair<long, long>>;
 using day01_answer = long;
 
-[[nodiscard]] [[gnu::noinline]] static auto
-day01_parse(std::span<char const> bytes) {
-  std::vector<std::pair<long, long>> res;
+[[nodiscard]] [[gnu::noinline]] static day01_parsed
+day01_parse(std::span<char const> bytes) noexcept {
+  day01_parsed res;
   res.reserve(1000);
-  for (std::ranges::subrange line : std::views::split(bytes, '\n')) {
-    if (line.empty()) {
+  std::from_chars_result r{.ptr = bytes.data(), .ec = std::errc{}};
+  char const *end{r.ptr + bytes.size_bytes()};
+  while (r.ptr != end) {
+    long f{0}, s{0};
+    // parse the first number
+    if (r = std::from_chars(r.ptr, end, f); r.ec != std::errc{})
       break;
-    }
-    int f{0}, s{0};
-    std::random_access_iterator auto x = std::ranges::find(line, ' ');
-    std::from_chars(line.begin().base(), x.base(), f);
-    std::ranges::subrange y = std::ranges::find_last(line, ' ');
-    std::from_chars(y.begin().base() + 1, y.end().base(), s);
+    // consume all whitespace
+    while (*++r.ptr == ' ')
+      ;
+    // parse the second number
+    if (r = std::from_chars(r.ptr, end, s); r.ec != std::errc{})
+      break;
     res.emplace_back(f, s);
+    // increment consumes the newline character
+    ++r.ptr;
   }
   std::ranges::sort(std::views::keys(res));
   std::ranges::sort(std::views::values(res));
   return res;
 }
 
-[[nodiscard]] [[gnu::noinline]] static auto
-day01_part1(day01_parsed const &data) {
+[[nodiscard]] [[gnu::noinline]] static day01_answer
+day01_part1(day01_parsed const &data) noexcept {
   return std::ranges::fold_left(
       std::views::zip_transform(absdiff, std::views::keys(data),
                                 std::views::values(data)),
@@ -52,7 +60,7 @@ day01_part2(day01_parsed const &data,
   std::ranges::random_access_range auto b = std::views::values(data);
   std::random_access_iterator auto ib = b.begin();
   auto compute = [&](long x) {
-    // advance b until they are strictly >=
+    // advance b until it is strictly >= x
     while (ib != b.end() and *ib < x) {
       ++ib;
     }
@@ -67,6 +75,15 @@ day01_part2(day01_parsed const &data,
 }
 
 int main() {
-  // entrypoints go here for each day...
-  SOLVE_DAY(day01);
+  timing_stats stats;
+
+  std::println("          {:>20s}{:>20s}{:>14s}{:>14s}{:>14s}{:>14s}", "Part 1",
+               "Part 2", "Parse", "Part 1", "Part 2", "Total");
+  std::println("          {:>20s}{:>20s}{:>14s}{:>14s}{:>14s}{:>14s}",
+               "======", "======", "=====", "======", "======", "=====");
+
+  // entrypoints go here for each day
+  stats += SOLVE_DAY(day01);
+
+  std::println("{:<10s}{:>20}{:>20}{}", "Total:", " --- ", " --- ", stats);
 }
