@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <functional>
 #include <iterator>
 #include <print>
 #include <ranges>
@@ -67,6 +68,52 @@ using Day01AnswerType = long;
   return std::ranges::fold_left(std::views::transform(a, compute), 0L, std::plus{});
 }
 
+using Day02ParsedType = std::vector<std::vector<long>>;
+using Day02AnswerType = long;
+
+[[nodiscard]] [[gnu::noinline]] static Day02ParsedType Day02Parse(std::span<char const> bytes) noexcept {
+  return bytes | std::views::split('\n') | std::views::filter([](auto&& line) { return not line.empty(); }) |
+         std::views::transform([](auto&& line) {
+           return line | std::views::split(' ') | std::views::transform([](auto&& num) -> long {
+                    long v{0};
+                    std::ignore = std::from_chars(num.begin().base(), num.end().base(), v);
+                    return v;
+                  }) |
+                  std::ranges::to<std::vector>();
+         }) |
+         std::ranges::to<std::vector>();
+}
+
+[[nodiscard]] static bool Day02CheckLevel(std::vector<long> const& level) {
+  std::ranges::random_access_range auto diffs = std::views::adjacent_transform<2>(level, std::minus{});
+  return std::ranges::fold_left(diffs, (diffs.front() != 0), [pos{diffs.front() > 0}](bool valid, long diff) {
+    return valid and (pos ? (1 <= diff and diff <= 3) : (-3 <= diff and diff <= -1));
+  });
+}
+
+[[nodiscard]] static bool Day02CheckLevelTolerant(std::vector<long>& temp, std::vector<long> const& level) {
+  // populate with all-but-first value
+  temp.assign(level.begin() + 1, level.end());
+  return std::ranges::any_of(std::views::iota(0, static_cast<int>(level.size())), [&](int i) {
+    if (i > 0) {
+      // only need to reassign a single element (replace new removed value with the one removed prior)
+      *std::next(temp.begin(), i - 1) = *std::next(level.begin(), i - 1);
+    }
+    return Day02CheckLevel(temp);
+  });
+}
+
+[[nodiscard]] [[gnu::noinline]] static Day02AnswerType Day02Part1(Day02ParsedType const& data) noexcept {
+  return std::ranges::count_if(data, Day02CheckLevel);
+}
+
+[[nodiscard]] [[gnu::noinline]] static Day02AnswerType
+Day02Part2(Day02ParsedType const& data, [[maybe_unused]] Day02AnswerType const& answer) {
+  // let's at least pretend we care about performance by reducing (re)allocations
+  static std::vector<long> curr;
+  return std::ranges::count_if(data, std::bind_front(Day02CheckLevelTolerant, curr));
+}
+
 int main(int argc, char* argv[]) {
   std::vector<std::string_view> args{argv, argv + argc};
   if (args.size() > 1) {
@@ -95,6 +142,7 @@ int main(int argc, char* argv[]) {
 
   // entrypoints go here for each day
   stats += SOLVE_DAY(Day01);
+  stats += SOLVE_DAY(Day02);
 
   std::println("{:<10s}{:>20}{:>20}{}", "Total:", " --- ", " --- ", stats);
 }
