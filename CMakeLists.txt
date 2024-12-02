@@ -11,8 +11,6 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS On)
 
-
-
 project(AdventOfCode2024 CXX)
 
 option(DEBUG Off)
@@ -36,8 +34,5 @@ add_compile_options(
     $<$<CXX_COMPILER_ID:GNU>:-Wnrvo>)
 
 add_executable(AdventOfCode2024)
-target_compile_features(AdventOfCode2024 PUBLIC cxx_std_26)
-target_sources(AdventOfCode2024
-    PRIVATE
-    advent.cpp
-    util.cpp)
+
+add_subdirectory(src)
