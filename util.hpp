@@ -1,37 +1,38 @@
 #pragma once
 
-
 #include <span>
 
 namespace util {
 
-struct file_descriptor {
-  file_descriptor(char const *filename);
-  ~file_descriptor() noexcept;
+struct FileDescriptor {
+  FileDescriptor(char const* filename);
+  ~FileDescriptor() noexcept;
 
-  file_descriptor() = delete;
-  file_descriptor(file_descriptor const &) = delete;
-  file_descriptor(file_descriptor &&) = delete;
-  file_descriptor &operator=(file_descriptor const &) = delete;
-  file_descriptor &operator=(file_descriptor &&) = delete;
+  FileDescriptor() = delete;
+  FileDescriptor(FileDescriptor const&) = delete;
+  FileDescriptor(FileDescriptor&&) = delete;
+  FileDescriptor& operator=(FileDescriptor const&) = delete;
+  FileDescriptor& operator=(FileDescriptor&&) = delete;
 
-  [[nodiscard]] inline operator int() const noexcept { return fd_; }
+  [[nodiscard]] inline operator int() const noexcept {
+    return fd_;
+  }
 
 private:
   int const fd_;
 };
 
-struct buffer {
-  buffer(const char *filename);
-  ~buffer() noexcept;
+struct Buffer {
+  Buffer(const char* filename);
+  ~Buffer() noexcept;
 
-  buffer(buffer const &) = delete;
-  buffer(buffer &&) = delete;
-  buffer &operator=(buffer const &) = delete;
-  buffer &operator=(buffer &&) = delete;
+  Buffer(Buffer const&) = delete;
+  Buffer(Buffer&&) = delete;
+  Buffer& operator=(Buffer const&) = delete;
+  Buffer& operator=(Buffer&&) = delete;
 
 private:
-  file_descriptor const fd_;
+  FileDescriptor const fd_;
 
 public:
   std::span<char const> const span;

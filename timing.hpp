@@ -2,14 +2,15 @@
 
 #include <format>
 
-struct timing_stats {
+struct TimingStats {
+  static inline int repetitions{1};
+
   long parse{0};
   long part1{0};
   long part2{0};
   long total{0};
 
-  constexpr inline timing_stats &
-  operator+=(timing_stats const &other) noexcept {
+  constexpr inline TimingStats& operator+=(TimingStats const& other) noexcept {
     parse += other.parse;
     part1 += other.part1;
     part2 += other.part2;
@@ -17,19 +18,24 @@ struct timing_stats {
     return *this;
   }
 
-  [[nodiscard]] constexpr inline timing_stats
-  operator+(timing_stats const &other) noexcept {
-    return timing_stats{*this} += other;
+  [[nodiscard]] constexpr inline TimingStats operator+(TimingStats const& other) noexcept {
+    return TimingStats{*this} += other;
   }
 };
 
-template <> struct std::formatter<timing_stats> {
-  constexpr inline auto parse(std::format_parse_context &ctx) {
+template <> struct std::formatter<TimingStats> {
+  // NOLINTNEXTLINE(readability-identifier-naming)
+  constexpr inline auto parse(std::format_parse_context& ctx) {
     return ctx.begin();
   }
 
-  inline auto format(const timing_stats &obj, std::format_context &ctx) const {
-    return std::format_to(ctx.out(), "{:>12}µs{:>12}µs{:>12}µs{:>12}µs",
-                          obj.parse, obj.part1, obj.part2, obj.total);
+  // NOLINTNEXTLINE(readability-identifier-naming)
+  inline auto format(const TimingStats& obj, std::format_context& ctx) const {
+    return std::format_to(ctx.out(),
+                          "{:>12}µs{:>12}µs{:>12}µs{:>12}µs",
+                          obj.parse / TimingStats::repetitions,
+                          obj.part1 / TimingStats::repetitions,
+                          obj.part2 / TimingStats::repetitions,
+                          obj.total / TimingStats::repetitions);
   }
 };

@@ -1,11 +1,19 @@
 cmake_minimum_required(VERSION 3.26.0)
-project(AdventOfCode2024 CXX)
+
+message(${CMAKE_HOST_SYSTEM_NAME})
+if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
+  set(CMAKE_CXX_COMPILER g++-14)
+endif()
 
 if (POLICY CMP0025)
   cmake_policy(SET CMP0025 NEW)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS On)
+
+
+
+project(AdventOfCode2024 CXX)
 
 option(DEBUG Off)
 
