@@ -1,41 +1,28 @@
 #pragma once
 
-#include <span>
+#include <functional>
+#include <string>
+#include <string_view>
 
 namespace util {
 
-struct FileDescriptor {
-  FileDescriptor(char const* filename);
-  ~FileDescriptor() noexcept;
+template <typename Fn> struct OnScopeExit {
 
-  FileDescriptor() = delete;
-  FileDescriptor(FileDescriptor const&) = delete;
-  FileDescriptor(FileDescriptor&&) = delete;
-  FileDescriptor& operator=(FileDescriptor const&) = delete;
-  FileDescriptor& operator=(FileDescriptor&&) = delete;
+  explicit OnScopeExit(Fn&& f) : fn_{std::move(f)} {
+  }
 
-  [[nodiscard]] inline operator int() const noexcept {
-    return fd_;
+  OnScopeExit(OnScopeExit const&) = delete;
+  OnScopeExit(OnScopeExit&&) = delete;
+  OnScopeExit& operator=(OnScopeExit const&) = delete;
+  OnScopeExit& operator=(OnScopeExit&&) = delete;
+  ~OnScopeExit() {
+    std::invoke(fn_);
   }
 
 private:
-  int const fd_;
+  Fn fn_;
 };
 
-struct Buffer {
-  Buffer(const char* filename);
-  ~Buffer() noexcept;
-
-  Buffer(Buffer const&) = delete;
-  Buffer(Buffer&&) = delete;
-  Buffer& operator=(Buffer const&) = delete;
-  Buffer& operator=(Buffer&&) = delete;
-
-private:
-  FileDescriptor const fd_;
-
-public:
-  std::span<char const> const span;
-};
+[[nodiscard]] std::string ReadFile(const char* filename);
 
 } // namespace util

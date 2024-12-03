@@ -9,38 +9,25 @@
 
 namespace util {
 
-FileDescriptor::FileDescriptor(char const* filename) : fd_{open(filename, O_RDONLY)} {
-  if (fd_ < 0) {
+std::string ReadFile(const char* filename) {
+  int fd = open(filename, O_RDONLY);
+  if (fd < 0) {
     throw std::invalid_argument{"invalid file"};
   }
-}
-
-FileDescriptor::~FileDescriptor() noexcept {
-  if (not(fd_ < 0)) {
-    close(fd_);
-  }
-}
-
-Buffer::Buffer(const char* filename)
-    : fd_{filename}, span{[this] {
-        if (struct stat file_stat; fstat(fd_, &file_stat) < 0) {
-          throw std::invalid_argument{"invalid file"};
-        } else {
-          size_t const bytes{static_cast<size_t>(file_stat.st_size)};
-          if (char const* address =
-                  reinterpret_cast<char const*>(mmap(NULL, bytes, PROT_READ, MAP_PRIVATE | MAP_FILE, fd_, 0));
-              address == nullptr) {
-            throw std::invalid_argument{"invalid file"};
-          } else {
-            return std::span{address, bytes};
-          }
-        }
-      }()} {
-}
-
-Buffer::~Buffer() noexcept {
-  if (char const* addr = span.data(); addr != nullptr) {
-    (void)munmap((void*)addr, span.size());
+  OnScopeExit _{[&] { (void)close(fd); }};
+  if (struct stat file_stat; fstat(fd, &file_stat) < 0) {
+    throw std::invalid_argument{"invalid file"};
+  } else {
+    size_t const bytes{static_cast<size_t>(file_stat.st_size)};
+    if (char const* address =
+            reinterpret_cast<char const*>(mmap(nullptr, bytes, PROT_READ, MAP_PRIVATE | MAP_FILE, fd, 0));
+        address == nullptr) {
+      throw std::invalid_argument{"invalid file"};
+    } else {
+      std::string s{address, bytes};
+      (void)munmap((void*)address, bytes);
+      return s;
+    }
   }
 }
 

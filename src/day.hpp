@@ -9,11 +9,11 @@
 template <auto ParseFn, auto Part1Fn, auto Part2Fn>
 [[nodiscard]] [[gnu::noinline]] static TimingStats SolveDay(char const* day, char const* filename) noexcept {
   using ClockType = std::chrono::steady_clock;
-  util::Buffer input{filename};
+  std::string const input{util::ReadFile(filename)};
   ClockType::time_point const t0 = ClockType::now();
-  auto const data = ParseFn(input.span);
+  auto const data = ParseFn(input);
   for (int i = 1; i < TimingStats::repetitions; ++i) {
-    std::ignore = ParseFn(input.span);
+    std::ignore = ParseFn(input);
   }
   ClockType::time_point const t1 = ClockType::now();
   auto const part1 = Part1Fn(data);

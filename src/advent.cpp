@@ -7,7 +7,7 @@
 #include <iterator>
 #include <print>
 #include <ranges>
-#include <span>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -19,11 +19,11 @@ constexpr static inline auto absdiff = []<typename T>(T const& x, std::same_as<T
 using Day01ParsedType = std::vector<std::pair<long, long>>;
 using Day01AnswerType = long;
 
-[[nodiscard]] [[gnu::noinline]] static Day01ParsedType Day01Parse(std::span<char const> bytes) noexcept {
+[[nodiscard]] [[gnu::noinline]] static Day01ParsedType Day01Parse(std::string_view input) noexcept {
   Day01ParsedType res;
   res.reserve(1000);
-  std::from_chars_result r{.ptr = bytes.data(), .ec = std::errc{}};
-  char const* end{r.ptr + bytes.size_bytes()};
+  std::from_chars_result r{.ptr = input.data(), .ec = std::errc{}};
+  char const* end{r.ptr + input.size()};
   while (r.ptr != end) {
     long f{0}, s{0};
     // parse the first number
@@ -71,12 +71,12 @@ using Day01AnswerType = long;
 using Day02ParsedType = std::vector<std::vector<long>>;
 using Day02AnswerType = long;
 
-[[nodiscard]] [[gnu::noinline]] static Day02ParsedType Day02Parse(std::span<char const> bytes) noexcept {
-  return bytes | std::views::split('\n') | std::views::filter([](auto&& line) { return not line.empty(); }) |
+[[nodiscard]] [[gnu::noinline]] static Day02ParsedType Day02Parse(std::string_view input) noexcept {
+  return input | std::views::split('\n') | std::views::filter([](auto&& line) { return not line.empty(); }) |
          std::views::transform([](auto&& line) {
            return line | std::views::split(' ') | std::views::transform([](auto&& num) -> long {
                     long v{0};
-                    std::ignore = std::from_chars(num.begin().base(), num.end().base(), v);
+                    std::ignore = std::from_chars(num.begin(), num.end(), v);
                     return v;
                   }) |
                   std::ranges::to<std::vector>();
