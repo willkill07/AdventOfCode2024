@@ -6,6 +6,7 @@
 
 import day01;
 import day02;
+import day03;
 import util;
 
 struct TimingStats {
@@ -85,8 +86,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  TimingStats stats;
-
   std::println("          {:>20s}{:>20s}{:>14s}{:>14s}{:>14s}{:>14s}",
                "Part 1",
                "Part 2",
@@ -102,9 +101,11 @@ int main(int argc, char* argv[]) {
                "======",
                "=====");
 
+  TimingStats stats;
   // entrypoints go here for each day
   stats += SOLVE_DAY(Day01);
   stats += SOLVE_DAY(Day02);
+  stats += SOLVE_DAY(Day03);
 
   std::println("{:<10s}{:>20}{:>20}{}", "Total:", " --- ", " --- ", stats);
 }

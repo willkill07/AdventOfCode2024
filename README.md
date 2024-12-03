@@ -1,19 +1,18 @@
 # Advent Of Code 2024
 
-Tested on Linux and macOS with GCC >= 14.1
-
-CMake will automatically use Homebrew's GCC 14 on macOS.
+Tested on Linux with libstdc++ >= 14.1 and clang >= 18.1
 
 ## Prerequisites
 
 1. CMake (version >= 3.28)
-2. GCC >= 14.1
-3. Make (or Ninja)
+2. libstdc++ >= 14.1
+3. clang >= 18.1
+3. Ninja
 
 ## Building
 
 ```
-cmake -B build && cmake --build build
+CXX=clang++ cmake -B build -GNinja && cmake --build build
 ```
 
 ## Running

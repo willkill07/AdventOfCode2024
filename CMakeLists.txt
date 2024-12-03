@@ -1,10 +1,5 @@
 cmake_minimum_required(VERSION 3.28.0)
 
-message(${CMAKE_HOST_SYSTEM_NAME})
-if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
-  set(CMAKE_CXX_COMPILER g++-14)
-endif()
-
 if (POLICY CMP0025)
   cmake_policy(SET CMP0025 NEW)
 endif()
@@ -22,6 +17,16 @@ if(DEBUG)
 else()
   set(CMAKE_BUILD_TYPE Release)
 endif()
+
+include(FetchContent)
+
+FetchContent_Declare(
+  ctre
+  GIT_REPOSITORY https://github.com/hanickadot/compile-time-regular-expressions
+  GIT_TAG        v3.9.0
+)
+
+FetchContent_MakeAvailable(ctre)
 
 add_compile_options(
     -Wall
