@@ -12,8 +12,7 @@ module;
 export module day01;
 
 constexpr auto AbsDiff = []<typename T>(T const& x, std::same_as<T> auto const& y) noexcept {
-  T const diff{x - y};
-  return (diff < 0) ? -diff : diff;
+  return x > y ? x - y : y - x;
 };
 
 export using Day01ParsedType = std::vector<std::pair<long, long>>;
