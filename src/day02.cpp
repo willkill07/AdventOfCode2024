@@ -6,50 +6,66 @@ module;
 #include <string_view>
 #include <vector>
 
+#include <ctre.hpp>
+
 export module day02;
 
-export using Day02ParsedType = std::vector<std::vector<long>>;
+constexpr auto Valid = [](std::ranges::random_access_range auto vals) {
+  auto diffs = std::views::adjacent_transform<2>(vals, std::minus{});
+  return std::ranges::all_of(diffs, [negative{diffs.front() < 0}](char d) {
+    char const val(negative ? -d : d);
+    return (1 <= val and val <= 3);
+  });
+};
+
+struct Values {
+private:
+  long count_{0};
+  std::array<char, 8> values_{};
+
+public:
+  Values& Update(long num) {
+    *(values_.data() + count_++) = static_cast<char>(num);
+    return *this;
+  }
+
+  [[nodiscard]] bool Valid() const noexcept {
+    return ::Valid(std::views::take(values_, count_));
+  }
+
+  [[nodiscard]] bool PotentiallyValid() const noexcept {
+    std::array<char, 8> vals;
+    std::ranges::copy(values_ | std::views::take(count_) | std::views::drop(1), vals.begin());
+    auto [in, out] = std::pair{values_.begin(), vals.begin()};
+    return std::ranges::any_of(std::views::iota(0, static_cast<int>(count_)), [&](int i) {
+      if (i > 0) {
+        *out++ = *in++;
+      }
+      return ::Valid(std::views::take(vals, count_ - 1));
+    });
+  }
+};
+
+export using Day02ParsedType = std::vector<Values>;
 export using Day02AnswerType = long;
 
 export Day02ParsedType Day02Parse(std::string_view input) noexcept {
-  return input | std::views::split('\n') | std::views::filter([](auto&& line) { return not line.empty(); }) |
-         std::views::transform([](auto&& line) {
-           return line | std::views::split(' ') | std::views::transform([](auto&& num) -> long {
-                    long v{0};
-                    std::ignore = std::from_chars(num.begin(), num.end(), v);
-                    return v;
-                  }) |
-                  std::ranges::to<std::vector>();
-         }) |
-         std::ranges::to<std::vector>();
-}
-
-bool Day02CheckLevel(std::vector<long> const& level) {
-  std::ranges::random_access_range auto diffs = std::views::adjacent_transform<2>(level, std::minus{});
-  return std::ranges::fold_left(diffs, (diffs.front() != 0), [pos{diffs.front() > 0}](bool valid, long diff) {
-    return valid and (pos ? (1 <= diff and diff <= 3) : (-3 <= diff and diff <= -1));
-  });
-}
-
-bool Day02CheckLevelTolerant(std::vector<long>& temp, std::vector<long> const& level) {
-  // populate with all-but-first value
-  temp.assign(level.begin() + 1, level.end());
-  return std::ranges::any_of(std::views::iota(0, static_cast<int>(level.size())), [&](int i) {
-    if (i > 0) {
-      // only need to reassign a single element (replace new removed value with the one removed prior)
-      *std::next(temp.begin(), i - 1) = *std::next(level.begin(), i - 1);
-    }
-    return Day02CheckLevel(temp);
-  });
+  return std::ranges::to<std::vector>(std::views::transform(
+      ctre::split<"\n">(input) | std::views::filter([](auto line) { return line.size() > 0; }),
+      [](auto line) {
+        return std::ranges::fold_left(
+            std::views::transform(ctre::split<" ">(line),
+                                  [](auto&& num) { return num.template to_number<long>(); }),
+            Values{},
+            &Values::Update);
+      }));
 }
 
 export Day02AnswerType Day02Part1(Day02ParsedType const& data) {
-  return std::ranges::count_if(data, Day02CheckLevel);
+  return std::ranges::count_if(data, &Values::Valid);
 }
 
 export Day02AnswerType Day02Part2(Day02ParsedType const& data,
                                   [[maybe_unused]] Day02AnswerType const& answer) {
-  // let's at least pretend we care about performance by reducing (re)allocations
-  static std::vector<long> curr;
-  return std::ranges::count_if(data, std::bind_front(Day02CheckLevelTolerant, curr));
+  return std::ranges::count_if(data, &Values::PotentiallyValid);
 }
