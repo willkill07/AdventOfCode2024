@@ -33,10 +33,10 @@ export Day04AnswerType Day04Part1(Day04ParsedType const& data) {
   std::size_t const w(x_count + 1);
   std::size_t const y_count{data.size() / w};
   for (std::size_t y = 0; y < y_count; ++y) {
+    bool const do_y{y + N <= y_count};
     for (std::size_t x = 0; x < x_count; ++x) {
-      bool const do_y{y + N <= y_count};
       bool const do_x{x + N <= x_count};
-      std::size_t const offset = y * w + x;
+      std::size_t const offset{y * w + x};
       count += // horizonal
           (do_x and CheckForXMASFrom(data, offset, 1)) +
           // vertical
@@ -50,10 +50,6 @@ export Day04AnswerType Day04Part1(Day04ParsedType const& data) {
   return count;
 }
 
-constexpr auto AbsDiff = []<typename T>(T const& x, std::same_as<T> auto const& y) noexcept {
-  return (x > y) ? x - y : y - x;
-};
-
 export Day04AnswerType Day04Part2(Day04ParsedType const& data,
                                   [[maybe_unused]] Day04AnswerType const& answer) {
   long count{0};
@@ -62,10 +58,10 @@ export Day04AnswerType Day04Part2(Day04ParsedType const& data,
   std::size_t const y_count{data.size() / w};
   for (std::size_t y = 1; y < y_count - 1; ++y) {
     for (std::size_t x = 1; x < x_count - 1; ++x) {
-      std::size_t const o{y * w + x};
-      count += (data[o] == 'A' and // center is A and diagonals must be SAM/MAS
-                AbsDiff(data[o - (w + 1)], data[o + (w + 1)]) == AbsDiff('S', 'M') and
-                AbsDiff(data[o - (w - 1)], data[o + (w - 1)]) == AbsDiff('S', 'M'));
+      std::size_t const offset{y * w + x};
+      count += (data[offset] == 'A' and // center is A and diagonals must be SAM/MAS
+                (data[offset - (w + 1)] + data[offset + (w + 1)]) == ('S' + 'M') and
+                (data[offset - (w - 1)] + data[offset + (w - 1)]) == ('S' + 'M'));
     }
   }
   return count;
