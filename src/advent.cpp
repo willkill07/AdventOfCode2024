@@ -8,6 +8,7 @@ import day01;
 import day02;
 import day03;
 import day04;
+import day05;
 import util;
 
 struct TimingStats {
@@ -120,6 +121,7 @@ int main(int argc, char* argv[]) {
   stats += SOLVE_DAY(Day02);
   stats += SOLVE_DAY(Day03);
   stats += SOLVE_DAY(Day04);
+  stats += SOLVE_DAY(Day05);
 
   std::println("{:<10s}{:>16s}{:>16s}{}", "Total:", " --- ", " --- ", stats);
 }

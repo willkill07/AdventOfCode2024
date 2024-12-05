@@ -13,6 +13,7 @@ target_sources(AdventOfCode2024
     day02.cpp
     day03.cpp
     day04.cpp
+    day05.cpp
     util.cpp)
 
 target_link_libraries(AdventOfCode2024 PRIVATE ctre::ctre)
