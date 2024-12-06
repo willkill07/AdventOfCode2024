@@ -1,4 +1,3 @@
-
 module;
 
 #include <algorithm>
@@ -39,7 +38,7 @@ export Day05ParsedType Day05Parse(std::string_view input) noexcept {
   parsed.rules.fill(false);
   for (auto match : ctre::search_all<R"((\d\d)\|(\d\d))">(input.substr(0, split))) {
     auto [_, a, b] = match;
-    Rule(parsed.rules, b.to_number() - Lower, a.to_number() - Lower) = true;
+    Rule(parsed.rules, a.to_number() - Lower, b.to_number() - Lower) = true;
   }
   parsed.updates = ctre::split<"\n">(input.substr(split + 2)) |
                    stdv::filter([](auto&& line) { return line.size() > 0; }) |
@@ -53,11 +52,10 @@ export Day05ParsedType Day05Parse(std::string_view input) noexcept {
 }
 
 constexpr auto CheckSorted = [](Rules const& rules, std::vector<int> const& update) {
-  for (auto i = update.begin(); i != update.end(); ++i) {
-    for (auto j = std::next(i); j != update.end(); ++j) {
-      if (Rule(rules, *i, *j)) {
-        return false;
-      }
+  // manually writing is much faster than using C++ standard library
+  for (auto i = std::next(update.begin()); i != update.end(); ++i) {
+    if (not Rule(rules, *std::prev(i), *i)) {
+      return false;
     }
   }
   return true;
@@ -70,20 +68,14 @@ export Day05AnswerType Day05Part1(Day05ParsedType const& data) {
       stdv::transform(stdv::filter(data.updates, std::bind_front(CheckSorted, data.rules)), GetMidpoint),
       0,
       std::plus{});
-  return 0;
 }
 
 constexpr auto SortAndGetMidpoint = [](Rules const& rules, std::vector<int> update) {
-  bool swapped{false};
-  for (auto i = update.begin(); i != update.end(); ++i) {
-    for (auto j = std::next(i); j != update.end(); ++j) {
-      if (Rule(rules, *i, *j)) {
-        std::iter_swap(i, j);
-        swapped = true;
-      }
-    }
+  if (CheckSorted(rules, update)) {
+    return 0;
   }
-  return swapped ? GetMidpoint(update) : 0;
+  std::ranges::sort(update, std::bind_front(Rule, rules));
+  return GetMidpoint(update);
 };
 
 export Day05AnswerType Day05Part2(Day05ParsedType const& data,
