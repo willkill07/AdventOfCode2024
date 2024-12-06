@@ -26,7 +26,13 @@ FetchContent_Declare(
   GIT_TAG        v3.9.0
 )
 
-FetchContent_MakeAvailable(ctre)
+FetchContent_Declare(
+  unordered_dense
+  GIT_REPOSITORY https://github.com/martinus/unordered_dense
+  GIT_TAG        v4.5.0
+)
+
+FetchContent_MakeAvailable(ctre unordered_dense)
 
 add_compile_options(
     -Wall

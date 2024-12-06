@@ -9,6 +9,7 @@ import day02;
 import day03;
 import day04;
 import day05;
+import day06;
 import util;
 
 struct TimingStats {
@@ -64,7 +65,7 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
   ClockType::time_point const t0 = ClockType::now();
   std::string const input{util::ReadFile(filename)};
   ClockType::time_point const t1 = ClockType::now();
-  auto const data = ParseFn(input);
+  auto data = ParseFn(input);
   for (int i = 1; i < TimingStats::repetitions; ++i) {
     std::ignore = ParseFn(input);
   }
@@ -122,6 +123,7 @@ int main(int argc, char* argv[]) {
   stats += SOLVE_DAY(Day03);
   stats += SOLVE_DAY(Day04);
   stats += SOLVE_DAY(Day05);
+  stats += SOLVE_DAY(Day06);
 
   std::println("{:<10s}{:>16s}{:>16s}{}", "Total:", " --- ", " --- ", stats);
 }
