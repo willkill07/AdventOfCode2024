@@ -1,6 +1,7 @@
 module;
 
 #include <algorithm>
+#include <charconv>
 #include <concepts>
 #include <functional>
 #include <ranges>
@@ -9,6 +10,7 @@ module;
 #include <vector>
 
 #include <ctre.hpp>
+#include <print>
 
 export module day07;
 
@@ -22,8 +24,8 @@ struct Trial {
   std::vector<long> sequence;
 
 private:
-  [[nodiscard]] bool CanReach(long target, auto iter, Part2Flag auto part2) const noexcept {
-    if (long const curr{*--iter}; iter == sequence.begin()) {
+  [[nodiscard]] bool CanReach(long target, std::size_t iter, Part2Flag auto part2) const noexcept {
+    if (long const curr{sequence[--iter]}; iter == 0) {
       return target == curr;
     } else if (long diff = target - curr; diff >= 0 and CanReach(diff, iter, part2)) {
       return true;
@@ -43,7 +45,7 @@ private:
 
 public:
   [[nodiscard]] long Check(Part2Flag auto part2) const noexcept {
-    return CanReach(candidate, sequence.end(), part2) ? candidate : 0;
+    return CanReach(candidate, sequence.size(), part2) ? candidate : 0;
   }
 };
 
@@ -51,28 +53,48 @@ export using Day07ParsedType = std::vector<Trial>;
 export using Day07AnswerType = long;
 
 export Day07ParsedType Day07Parse(std::string_view input) noexcept {
-  return ctre::split<"\n">(input) | std::views::filter([](auto&& line) { return line.size() != 0; }) |
-         std::views::transform([](auto&& line) {
-           auto colon = line.view().find(':');
-           auto target = line.view().substr(0, colon);
-           long candidate{0};
-           std::from_chars(target.begin(), target.end(), candidate);
-           return Trial{.candidate = candidate,
-                        .sequence = ctre::split<" ">(line.view().substr(colon + 2)) |
-                                    std::views::transform(
-                                        [](auto&& match) { return match.template to_number<long>(); }) |
-                                    std::ranges::to<std::vector>()};
-         }) |
-         std::ranges::to<std::vector>();
+  std::vector<Trial> trials;
+  trials.reserve(850);
+  for (auto i = input.begin(); i != input.end(); ++i) {
+    long target;
+    auto [ii, _] = std::from_chars(i, input.end(), target);
+    // advance past ': '
+    i = ii + 2;
+    std::vector<long> values;
+    values.reserve(12);
+    while (true) {
+      long val;
+      auto [iii, _] = std::from_chars(i, input.end(), val);
+      values.push_back(val);
+      i = iii;
+      if (*i == '\n') {
+        break;
+      }
+      // advance past ' ';
+      ++i;
+    }
+    trials.emplace_back(target, std::move(values));
+  }
+  return trials;
 }
+
+long p2{0};
 
 export Day07AnswerType Day07Part1(Day07ParsedType const& data) noexcept {
-  return std::ranges::fold_left(
-      std::views::transform(data, [](Trial const& t) { return t.Check(Part2<false>); }), 0L, std::plus{});
+  long p1{0};
+  p2 = 0;
+  // it's faster to conditionally process part 2 with part 1
+  for (auto const& t : data) {
+    if (long v1{t.Check(Part2<false>)}; v1 > 0) {
+      p1 += v1;
+    } else if (long v2{t.Check(Part2<true>)}; v2 > 0) {
+      p2 += v2;
+    }
+  }
+  return p1;
 }
 
-export Day07AnswerType Day07Part2(Day07ParsedType const& data,
-                                  [[maybe_unused]] Day07AnswerType const& answer) {
-  return std::ranges::fold_left(
-      std::views::transform(data, [](Trial const& t) { return t.Check(Part2<true>); }), 0L, std::plus{});
+export Day07AnswerType Day07Part2([[maybe_unused]] Day07ParsedType const& data,
+                                  Day07AnswerType const& answer) {
+  return answer + p2;
 }
