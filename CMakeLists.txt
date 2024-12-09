@@ -18,21 +18,29 @@ else()
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-include(FetchContent)
+include(cmake/CPM.cmake)
 
-FetchContent_Declare(
-  ctre
-  GIT_REPOSITORY https://github.com/hanickadot/compile-time-regular-expressions
-  GIT_TAG        v3.9.0
+CPMAddPackage(
+  NAME ctre
+  GITHUB_REPOSITORY hanickadot/compile-time-regular-expressions
+  GIT_TAG v3.9.0
 )
 
-FetchContent_Declare(
-  unordered_dense
-  GIT_REPOSITORY https://github.com/martinus/unordered_dense
-  GIT_TAG        v4.5.0
+CPMAddPackage(
+  NAME unordered_dense
+  GITHUB_REPOSITORY martinus/unordered_dense
+  GIT_TAG v4.5.0
 )
 
-FetchContent_MakeAvailable(ctre unordered_dense)
+CPMAddPackage(
+  NAME thread-pool
+  GITHUB_REPOSITORY DeveloperPaul123/thread-pool
+  GIT_TAG bc107644b3b8605b8ea6a4dbd25b35fa304ebebb
+  OPTIONS
+    "TP_BUILD_TESTS OFF"
+    "TP_BUILD_BENCHMARKS OFF"
+    "TP_BUILD_EXAMPLES OFF"  
+)
 
 add_compile_options(
     -Wall

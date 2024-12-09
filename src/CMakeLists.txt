@@ -19,4 +19,4 @@ target_sources(AdventOfCode2024
     day08.cpp
     util.cpp)
 
-target_link_libraries(AdventOfCode2024 PRIVATE ctre::ctre unordered_dense::unordered_dense)
+target_link_libraries(AdventOfCode2024 PRIVATE ctre::ctre unordered_dense::unordered_dense dp::thread-pool)
