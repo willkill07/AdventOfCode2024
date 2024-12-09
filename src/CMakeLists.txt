@@ -17,6 +17,7 @@ target_sources(AdventOfCode2024
     day06.cpp
     day07.cpp
     day08.cpp
+    day09.cpp
     util.cpp)
 
 target_link_libraries(AdventOfCode2024 PRIVATE ctre::ctre unordered_dense::unordered_dense dp::thread-pool)
