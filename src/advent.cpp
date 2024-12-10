@@ -2,6 +2,7 @@
 #include <chrono>
 #include <format>
 #include <print>
+#include <ranges>
 #include <vector>
 
 import day01;
@@ -20,16 +21,12 @@ import util;
 struct TimingStats {
   static inline int repetitions{1};
 
-  long io{0};
-  long parse{0};
-  long part1{0};
-  long part2{0};
-  long total{0};
+  long io{0}, parse{0}, part1{0}, part2{0}, total{0};
 
   constexpr TimingStats() noexcept = default;
 
   TimingStats(long io, long parse, long part1, long part2) noexcept
-      : io{io}, parse{parse}, part1{part1}, part2{part2}, total{io + (parse + part1 + part2) / repetitions} {
+      : io{io}, parse{parse}, part1{part1}, part2{part2}, total{(io + parse + part1 + part2) / repetitions} {
   }
 
   constexpr inline TimingStats& operator+=(TimingStats const& other) noexcept {
@@ -46,6 +43,8 @@ struct TimingStats {
   }
 };
 
+static bool mask{false};
+
 template <> struct std::formatter<TimingStats> {
   // NOLINTNEXTLINE(readability-identifier-naming)
   constexpr inline auto parse(std::format_parse_context& ctx) {
@@ -54,21 +53,47 @@ template <> struct std::formatter<TimingStats> {
 
   // NOLINTNEXTLINE(readability-identifier-naming)
   inline auto format(TimingStats const& obj, std::format_context& ctx) const {
-    return std::format_to(ctx.out(),
-                          "{:>10}µs{:>10}µs{:>10}µs{:>10}µs{:>10}µs",
-                          obj.io,
-                          obj.parse / TimingStats::repetitions,
-                          obj.part1 / TimingStats::repetitions,
-                          obj.part2 / TimingStats::repetitions,
-                          obj.total);
+    auto get_number_and_label = [](long num) -> std::pair<long, std::string_view> {
+      unsigned offset{0};
+      while (num >= 10'000) {
+        num /= 1'000;
+        ++offset;
+      }
+      return std::pair{num, std::array{"ns", "µs", "ms", " s", "Ks", "Ms"}[offset]};
+    };
+    auto [io, iol] = get_number_and_label(obj.io / TimingStats::repetitions);
+    auto [p, pl] = get_number_and_label(obj.parse / TimingStats::repetitions);
+    auto [p1, p1l] = get_number_and_label(obj.part1 / TimingStats::repetitions);
+    auto [p2, p2l] = get_number_and_label(obj.part2 / TimingStats::repetitions);
+    auto [t, tl] = get_number_and_label(obj.total);
+    // clang-format off
+    return std::format_to(ctx.out(), "{:>4}{:2s} │ {:>4}{:2s} │ {:>4}{:2s} │ {:>4}{:2s} │ {:>4}{:2s}",
+                          io, iol, p, pl, p1, p1l, p2, p2l, t, tl);
+    // clang-format on
   }
 };
 
+[[nodiscard]] constexpr std::string_view Emoji(std::size_t num) {
+  using std::string_view_literals::operator""sv;
+  constexpr std::array const e{
+      ""sv, "🍪"sv, "👺"sv, "🖋️ "sv, "🎥"sv, "🔥"sv, "🛋️ "sv, "🧮"sv, "🏎️ "sv, "🎆"sv, "🤩"sv};
+  if (num >= e.size()) {
+    return "??";
+  } else {
+    return e[static_cast<unsigned>(num)];
+  }
+}
+
 template <auto ParseFn, auto Part1Fn, auto Part2Fn>
-[[nodiscard]] [[gnu::noinline]] static TimingStats SolveDay(char const* day, char const* filename) noexcept {
+[[nodiscard]] [[gnu::noinline]] static TimingStats SolveDay(unsigned day_num) noexcept {
+
+  std::string const filename{std::format("inputs/Day{:02d}.txt", day_num)};
   using ClockType = std::chrono::steady_clock;
   ClockType::time_point const t0 = ClockType::now();
-  std::string const input{util::ReadFile(filename)};
+  std::string const input{util::ReadFile(filename.c_str())};
+  for (int i = 1; i < TimingStats::repetitions; ++i) {
+    std::ignore = util::ReadFile(filename.c_str());
+  }
   ClockType::time_point const t1 = ClockType::now();
   auto data = ParseFn(input);
   for (int i = 1; i < TimingStats::repetitions; ++i) {
@@ -85,15 +110,35 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
     std::ignore = Part2Fn(data, part1);
   }
   ClockType::time_point const t4 = ClockType::now();
-  TimingStats const stats{/*io=*/std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count(),
-                          /*parse=*/std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count(),
-                          /*part1=*/std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2).count(),
-                          /*part2=*/std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count()};
-  std::println("Day {}:   {:>16}{:>16}{}", day + 3, std::move(part1), std::move(part2), stats);
+  TimingStats const stats{/*io=*/std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count(),
+                          /*parse=*/std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count(),
+                          /*part1=*/std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count(),
+                          /*part2=*/std::chrono::duration_cast<std::chrono::nanoseconds>(t4 - t3).count()};
+  auto p1 = std::to_string(part1);
+  auto p2 = std::to_string(part2);
+  if (mask) {
+    std::ranges::fill(p1, 'X');
+    std::ranges::fill(p2, 'X');
+  }
+  std::println("│  {:02d} │ {: >15} │ {: >15} │ {} │ {:s} │",
+               day_num,
+               std::move(p1),
+               std::move(p2),
+               stats,
+               Emoji(day_num));
   return stats;
 }
 
-#define SOLVE_DAY(Day) SolveDay<&Day##Parse, &Day##Part1, &Day##Part2>(#Day, "inputs/" #Day ".txt")
+constexpr std::array DAYS{SolveDay<&Day01Parse, &Day01Part1, &Day01Part2>,
+                          SolveDay<&Day02Parse, &Day02Part1, &Day02Part2>,
+                          SolveDay<&Day03Parse, &Day03Part1, &Day03Part2>,
+                          SolveDay<&Day04Parse, &Day04Part1, &Day04Part2>,
+                          SolveDay<&Day05Parse, &Day05Part1, &Day05Part2>,
+                          SolveDay<&Day06Parse, &Day06Part1, &Day06Part2>,
+                          SolveDay<&Day07Parse, &Day07Part1, &Day07Part2>,
+                          SolveDay<&Day08Parse, &Day08Part1, &Day08Part2>,
+                          SolveDay<&Day09Parse, &Day09Part1, &Day09Part2>,
+                          SolveDay<&Day10Parse, &Day10Part1, &Day10Part2>};
 
 int main(int argc, char* argv[]) {
   threading::Initialize();
@@ -104,36 +149,25 @@ int main(int argc, char* argv[]) {
       std::println("Note: doing {} repetitions of each.", TimingStats::repetitions);
     }
   }
-
-  std::println("          {:>16s}{:>16s}{:>12s}{:>12s}{:>12s}{:>12s}{:>12s}",
-               "Part 1",
-               "Part 2",
-               "File I/O",
-               "Parse",
-               "Part 1",
-               "Part 2",
-               "Total");
-  std::println("          {:>16s}{:>16s}{:>12s}{:>12s}{:>12s}{:>12s}{:>12s}",
-               "======",
-               "======",
-               "========",
-               "=====",
-               "======",
-               "======",
-               "=====");
+  if (args.size() > 2) {
+    mask = (args[2] == "mask");
+    if (mask) {
+      std::println("Note: masking answers.");
+    }
+  }
 
   TimingStats stats;
-  // entrypoints go here for each day
-  stats += SOLVE_DAY(Day01);
-  stats += SOLVE_DAY(Day02);
-  stats += SOLVE_DAY(Day03);
-  stats += SOLVE_DAY(Day04);
-  stats += SOLVE_DAY(Day05);
-  stats += SOLVE_DAY(Day06);
-  stats += SOLVE_DAY(Day07);
-  stats += SOLVE_DAY(Day08);
-  stats += SOLVE_DAY(Day09);
-  stats += SOLVE_DAY(Day10);
-
-  std::println("{:<10s}{:>16s}{:>16s}{}", "Total:", " --- ", " --- ", stats);
+  // clang-format off
+  std::println("      ╭───────────────────────────────────┬────────────────────────────────────────────╮");
+  std::println("      │              Answers              │                   Timing                   │");
+  std::println("╭─────┼─────────────────┬─────────────────┼────────┬────────┬────────┬────────┬────────┼────╮");
+  std::println("│ Day │          Part 1 │          Part 2 │  I/O   │ Parse  │ Part 1 │ Part 2 │ Total  │ 🏆 │");
+  std::println("├─────┼─────────────────┼─────────────────┼────────┼────────┼────────┼────────┼────────┼────┤");
+  for (auto&& [day, fn] : std::views::zip(std::views::iota(1U), DAYS)) {
+    stats += fn(day);
+  }
+  std::println("╰─────┼─────────────────┴─────────────────┼────────┼────────┼────────┼────────┼────────┼────╯");
+  std::println("      │ AoC++ 2024 in C++23 by willkill07 │ {} │", stats);
+  std::println("      ╰───────────────────────────────────┴────────┴────────┴────────┴────────┴────────╯");
+  // clang-format on
 }
