@@ -4,112 +4,16 @@ module;
 #include <atomic>
 #include <ranges>
 #include <string_view>
-#include <thread>
 #include <utility>
 
 #include <ankerl/unordered_dense.h>
-#include <thread_pool/thread_pool.h>
+
+#include "point.hpp"
+#include "threading.hpp"
 
 export module day06;
 
 namespace {
-
-enum class Dir { Up = 0, Right = 1, Down = 2, Left = 3 };
-
-struct Point {
-  int x, y;
-
-  constexpr inline Point(int x, int y) noexcept : x{x}, y{y} {
-  }
-  constexpr inline Point(Dir dir) noexcept : Point(0, 0) {
-    switch (dir) {
-    case Dir::Up:
-      y = -1;
-      break;
-    case Dir::Down:
-      y = 1;
-      break;
-    case Dir::Left:
-      x = -1;
-      break;
-    case Dir::Right:
-      x = 1;
-      break;
-    }
-  }
-
-  constexpr inline Point& operator+=(Point const& p) noexcept {
-    x += p.x;
-    y += p.y;
-    return *this;
-  }
-
-  constexpr inline Point& operator+=(Dir dir) noexcept {
-    return *this += Point{dir};
-    switch (dir) {
-    case Dir::Down:
-      ++y;
-      break;
-    case Dir::Up:
-      --y;
-      break;
-    case Dir::Left:
-      --x;
-      break;
-    case Dir::Right:
-      ++x;
-      break;
-    }
-    return *this;
-  }
-
-  constexpr inline Point& operator-=(Dir dir) noexcept {
-    return *this -= Point{dir};
-    switch (dir) {
-    case Dir::Down:
-      --y;
-      break;
-    case Dir::Up:
-      ++y;
-      break;
-    case Dir::Left:
-      ++x;
-      break;
-    case Dir::Right:
-      --x;
-      break;
-    }
-    return *this;
-  }
-
-  constexpr inline Point& operator-=(Point const& p) noexcept {
-    x -= p.x;
-    y -= p.y;
-    return *this;
-  }
-
-  [[nodiscard]] constexpr inline Point operator+(Point const& p) const noexcept {
-    return Point{*this} += p;
-  }
-
-  [[nodiscard]] constexpr inline Point operator+(Dir dir) const noexcept {
-    return Point{*this} += dir;
-  }
-
-  [[nodiscard]] constexpr inline Point operator-(Point const& p) const noexcept {
-    return Point{*this} -= p;
-  }
-
-  [[nodiscard]] constexpr inline Point operator-(Dir dir) const noexcept {
-    return Point{*this} -= dir;
-  }
-
-  [[nodiscard]] constexpr inline bool operator==(Point const& rhs) const noexcept = default;
-
-  [[nodiscard]] constexpr inline std::size_t Index(auto dim) const noexcept {
-    return static_cast<std::size_t>(dim) * static_cast<std::size_t>(y) + static_cast<std::size_t>(x);
-  }
-};
 
 struct Guard {
   Point loc{0, 0};
@@ -251,25 +155,6 @@ public:
     return false;
   }
 };
-
-template <std::ranges::random_access_range Range>
-void ParallelForEach(Range&& range,
-                     std::move_only_function<void(std::ranges::range_const_reference_t<Range>)> fn) {
-  static unsigned const THREADS{std::thread::hardware_concurrency()};
-  static dp::thread_pool<> thread_pool{THREADS};
-  std::size_t const n{range.size()};
-  long curr{0};
-  for (unsigned i : std::views::iota(0u, THREADS)) {
-    long const next{static_cast<long>((i + 1) * n / THREADS)};
-    thread_pool.enqueue_detach([&fn, &range, curr, next]() {
-      for (Guard& item : std::views::take(std::views::drop(range, curr), next - curr)) {
-        std::invoke(fn, item);
-      }
-    });
-    curr = next;
-  }
-  thread_pool.wait_for_tasks();
-}
 
 } // namespace
 

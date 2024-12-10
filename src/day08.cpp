@@ -5,37 +5,11 @@ module;
 #include <ranges>
 #include <string_view>
 
+#include "point.hpp"
+
 export module day08;
 
 namespace {
-
-struct Point {
-  int x{-1}, y{-1};
-
-  [[nodiscard]] constexpr inline std::size_t Index(int width) const noexcept {
-    return static_cast<std::size_t>(static_cast<std::int64_t>(y * width) + x);
-  }
-
-  constexpr inline Point& operator+=(Point const& other) noexcept {
-    x += other.x;
-    y += other.y;
-    return *this;
-  }
-
-  constexpr inline Point& operator-=(Point const& other) noexcept {
-    x -= other.x;
-    y -= other.y;
-    return *this;
-  }
-
-  [[nodiscard]] constexpr inline Point operator+(Point const& other) const noexcept {
-    return Point{*this} += other;
-  }
-
-  [[nodiscard]] constexpr inline Point operator-(Point const& other) const noexcept {
-    return Point{*this} -= other;
-  }
-};
 
 constexpr static std::size_t MaxRepeats{4};
 constexpr static char MinChar{'0'};
@@ -50,7 +24,7 @@ struct Info {
   int width;
 };
 
-constexpr auto InBounds = [](int dim, Point const& loc) {
+constexpr static inline auto InBounds = [](int dim, Point const& loc) {
   auto const& [x, y] = loc;
   return 0 <= x and x < dim and 0 <= y and y < dim;
 };
