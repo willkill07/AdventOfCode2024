@@ -124,9 +124,10 @@ struct Guard {
     dir = Dir{(std::to_underlying(dir) + 1) & 0x3};
   }
 
-  constexpr inline Guard& Move() noexcept {
+  constexpr inline Guard Move() noexcept {
+    Guard copy{*this};
     loc += dir;
-    return *this;
+    return copy;
   }
 
   [[nodiscard]] constexpr inline std::size_t Index(auto dim) const noexcept {
@@ -142,6 +143,7 @@ public:
   Guard guard;
 
 private:
+  std::string_view grid_;
   std::vector<int> mapping_;
   std::span<int> up_, right_, down_, left_;
 
@@ -157,6 +159,7 @@ public:
           auto [y, x] = std::div(static_cast<int>(grid.find('^')), static_cast<int>(dim + 1));
           return Guard{Point{x, y}};
         }()},
+        grid_{grid},
         mapping_(dim * dim * 4),
         up_{GetDir(Dir::Up)},
         right_{GetDir(Dir::Right)},
@@ -202,23 +205,8 @@ public:
     return 0 <= pos.x and std::cmp_less(pos.x, dim) and 0 <= pos.y and std::cmp_less(pos.y, dim);
   }
 
-  void Step(Guard& g) const noexcept {
-    std::size_t const index{g.loc.Index(dim)};
-    switch (g.dir) {
-    case Dir::Up:
-      g.loc.y = up_[index];
-      break;
-    case Dir::Down:
-      g.loc.y = down_[index];
-      break;
-    case Dir::Left:
-      g.loc.x = left_[index];
-      break;
-    case Dir::Right:
-      g.loc.x = right_[index];
-      break;
-    }
-    g.Turn();
+  [[nodiscard]] char Get(Point const& pos) const noexcept {
+    return grid_[pos.Index(dim + 1)];
   }
 
   void Step(Guard& g, Point const& obstacle) const noexcept {
@@ -249,10 +237,9 @@ public:
     g.Turn();
   }
 
-  [[nodiscard]] bool inline HasCycle(Guard g) const noexcept {
+  [[nodiscard]] bool inline HasCycle(Guard g, Point const& obstacle) const noexcept {
     thread_local ankerl::unordered_dense::set<int> seen;
     seen.clear();
-    Point const obstacle{g.loc + g.dir};
     while (InBounds(g.loc)) {
       std::size_t const index{g.Index(dim)};
       if (auto [_, inserted] = seen.insert(index); not inserted) {
@@ -296,26 +283,35 @@ export Day06ParsedType Day06Parse(std::string_view input) noexcept {
 static std::vector<Guard> path;
 
 export Day06AnswerType Day06Part1(Day06ParsedType const& mapping) {
-  std::vector<bool> visited(static_cast<std::size_t>(mapping.dim * mapping.dim), false);
-  path.reserve(6'144);
+  path.reserve(6'000);
   path.clear();
-  Guard guard{mapping.guard};
-  while (mapping.InBounds(guard.loc)) {
-    auto const [start, dir] = guard;
-    mapping.Step(guard);
-    Point const stop{guard.loc};
-    for (Point p{start}; p != stop; p += dir) {
-      visited[p.Index(mapping.dim)] = true;
-      path.emplace_back(p, dir);
+  std::vector<char> visited(static_cast<std::size_t>(mapping.dim * mapping.dim), 0);
+  Guard g{mapping.guard};
+  long count{1};
+  while (mapping.InBounds(g.loc)) {
+    while (mapping.InBounds(g.loc + g.dir) and mapping.Get(g.loc + g.dir) == '#') {
+      g.Turn();
+    }
+    Guard const curr{g.Move()};
+    auto const& [pos, _] = g;
+    if (std::size_t const idx{pos.Index(mapping.dim)};
+        mapping.InBounds(pos) and mapping.Get(pos) == '.' and not visited[idx]) {
+      visited[idx] = 1;
+      ++count;
+      path.push_back(curr);
     }
   }
-  return std::ranges::count(visited, true);
+  return count;
 }
 
 export Day06AnswerType Day06Part2(Day06ParsedType const& mapping,
                                   [[maybe_unused]] Day06AnswerType const& answer) {
-  std::vector<bool> visited(static_cast<std::size_t>(mapping.dim * mapping.dim), false);
-  std::atomic_long count{0};
-  ParallelForEach(path, [&](Guard const& guard) { count += mapping.HasCycle(guard); });
-  return count.load();
+  std::vector<char> added(static_cast<std::size_t>(mapping.dim * mapping.dim), '.');
+  ParallelForEach(path, [&](Guard const& guard) {
+    Point const obstacle{guard.loc + guard.dir};
+    if (mapping.InBounds(obstacle) and mapping.HasCycle(guard, obstacle)) {
+      std::atomic_ref{added[obstacle.Index(mapping.dim)]} = 'X';
+    }
+  });
+  return std::ranges::count(added, 'X');
 }
