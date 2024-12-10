@@ -86,7 +86,8 @@ export Day10AnswerType Day10Part1(Day10ParsedType const& data) noexcept {
   threading::ParallelForEach(data.trailheads,
                              std::bind_front(TraverseFrom<ankerl::unordered_dense::set<Point, Hash>>,
                                              std::cref(data),
-                                             std::ref(result)));
+                                             std::ref(result)),
+                             threading::GetNumThreads() / 2);
   return result;
 }
 
@@ -94,6 +95,8 @@ export Day10AnswerType Day10Part2(Day10ParsedType const& data,
                                   [[maybe_unused]] Day10AnswerType const& answer) {
   std::atomic_long result{0};
   threading::ParallelForEach(
-      data.trailheads, std::bind_front(TraverseFrom<std::vector<Point>>, std::cref(data), std::ref(result)));
+      data.trailheads,
+      std::bind_front(TraverseFrom<std::vector<Point>>, std::cref(data), std::ref(result)),
+      threading::GetNumThreads() / 2);
   return result;
 }

@@ -14,6 +14,7 @@ import day07;
 import day08;
 import day09;
 import day10;
+import threading;
 import util;
 
 struct TimingStats {
@@ -95,6 +96,7 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
 #define SOLVE_DAY(Day) SolveDay<&Day##Parse, &Day##Part1, &Day##Part2>(#Day, "inputs/" #Day ".txt")
 
 int main(int argc, char* argv[]) {
+  threading::Initialize();
   std::vector<std::string_view> args{argv, argv + argc};
   if (args.size() > 1) {
     std::ignore = std::from_chars(args[1].begin(), args[1].end(), TimingStats::repetitions);
