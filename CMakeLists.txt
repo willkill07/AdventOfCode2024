@@ -34,8 +34,8 @@ CPMAddPackage(
 
 CPMAddPackage(
   NAME thread-pool
-  GITHUB_REPOSITORY DeveloperPaul123/thread-pool
-  GIT_TAG bc107644b3b8605b8ea6a4dbd25b35fa304ebebb
+  GITHUB_REPOSITORY willkill07/thread-pool
+  GIT_TAG 779cc0e4b92f7c32a89501c85f716b036d0b2668
   OPTIONS
     "TP_BUILD_TESTS OFF"
     "TP_BUILD_BENCHMARKS OFF"

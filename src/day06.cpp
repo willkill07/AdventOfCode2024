@@ -9,9 +9,10 @@ module;
 #include <ankerl/unordered_dense.h>
 
 #include "point.hpp"
-#include "threading.hpp"
 
 export module day06;
+
+import threading;
 
 namespace {
 
@@ -192,7 +193,7 @@ export Day06AnswerType Day06Part1(Day06ParsedType const& mapping) {
 export Day06AnswerType Day06Part2(Day06ParsedType const& mapping,
                                   [[maybe_unused]] Day06AnswerType const& answer) {
   std::vector<char> added(static_cast<std::size_t>(mapping.dim * mapping.dim), '.');
-  ParallelForEach(path, [&](Guard const& guard) {
+  threading::ParallelForEach(path, [&](Guard const& guard) {
     Point const obstacle{guard.loc + guard.dir};
     if (mapping.InBounds(obstacle) and mapping.HasCycle(guard, obstacle)) {
       std::atomic_ref{added[obstacle.Index(mapping.dim)]} = 'X';
