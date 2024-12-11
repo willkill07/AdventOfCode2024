@@ -37,40 +37,10 @@ struct Point {
 
   constexpr inline Point& operator+=(Dir dir) noexcept {
     return *this += Point{dir};
-    switch (dir) {
-    case Dir::Down:
-      ++y;
-      break;
-    case Dir::Up:
-      --y;
-      break;
-    case Dir::Left:
-      --x;
-      break;
-    case Dir::Right:
-      ++x;
-      break;
-    }
-    return *this;
   }
 
   constexpr inline Point& operator-=(Dir dir) noexcept {
     return *this -= Point{dir};
-    switch (dir) {
-    case Dir::Down:
-      --y;
-      break;
-    case Dir::Up:
-      ++y;
-      break;
-    case Dir::Left:
-      ++x;
-      break;
-    case Dir::Right:
-      --x;
-      break;
-    }
-    return *this;
   }
 
   constexpr inline Point& operator-=(Point const& p) noexcept {
