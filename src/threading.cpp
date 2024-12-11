@@ -35,7 +35,7 @@ export dp::thread_pool<>& GetThreadPool() {
 }
 
 export template <std::ranges::random_access_range Range>
-void ParallelForEach(Range&& range, std::invocable<std::ranges::range_const_reference_t<Range>> auto&& fn, unsigned threads = GetNumThreads()) {
+void ParallelForEach(Range&& range, std::invocable<std::ranges::range_reference_t<Range>> auto&& fn, unsigned threads = GetNumThreads()) {
   std::size_t const n{range.size()};
   auto const next_offsets =
       std::views::iota(0u, threads + 1) |

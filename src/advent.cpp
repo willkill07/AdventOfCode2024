@@ -18,6 +18,7 @@ import day07;
 import day08;
 import day09;
 import day10;
+import day11;
 import spinner;
 import threading;
 import util;
@@ -80,7 +81,7 @@ template <> struct std::formatter<TimingStats> {
 [[nodiscard]] constexpr std::string_view Emoji(std::size_t num) {
   using std::string_view_literals::operator""sv;
   constexpr std::array const e{
-      ""sv, "🍪"sv, "👺"sv, "🖋️ "sv, "🎥"sv, "🔥"sv, "🛋️ "sv, "🧮"sv, "🏎️ "sv, "🎆"sv, "🤩"sv};
+      ""sv, "🍪"sv, "👺"sv, "🖋️ "sv, "🎥"sv, "🔥"sv, "🛋️ "sv, "🧮"sv, "🏎️ "sv, "🎆"sv, "🤩"sv, "🐠"sv};
   if (num >= e.size()) {
     return "??";
   } else {
@@ -157,7 +158,8 @@ constexpr std::array DAYS{SolveDay<&Day01Parse, &Day01Part1, &Day01Part2>,
                           SolveDay<&Day07Parse, &Day07Part1, &Day07Part2>,
                           SolveDay<&Day08Parse, &Day08Part1, &Day08Part2>,
                           SolveDay<&Day09Parse, &Day09Part1, &Day09Part2>,
-                          SolveDay<&Day10Parse, &Day10Part1, &Day10Part2>};
+                          SolveDay<&Day10Parse, &Day10Part1, &Day10Part2>,
+                          SolveDay<&Day11Parse, &Day11Part1, &Day11Part2>};
 
 int main(int argc, char* argv[]) {
   bool const has_tty{static_cast<bool>(::isatty(STDOUT_FILENO))};

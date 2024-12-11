@@ -39,10 +39,10 @@ export Day01AnswerType Day01Part2(Day01ParsedType const& data,
   auto a = std::views::keys(data);
   auto b = std::views::values(data);
   // clang-format off
-  auto reduce = [](auto&& pair, long x) {
+  auto reduce = [end = b.end()](auto&& pair, long x) {
     auto [acc, i] = pair;
-    auto j = i; while (x > *j) { ++j; }
-    auto k = j; while (x == *k) { ++k; }
+    auto j = i; while (j != end and x > *j) { ++j; }
+    auto k = j; while (k != end and x == *k) { ++k; }
     return std::pair{acc + x * std::distance(j, k), i + std::distance(i, k)};
   };
   // clang-format on
