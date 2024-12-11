@@ -5,6 +5,9 @@
 #include <ranges>
 #include <vector>
 
+#include <cstdio>
+#include <unistd.h>
+
 import day01;
 import day02;
 import day03;
@@ -15,6 +18,7 @@ import day07;
 import day08;
 import day09;
 import day10;
+import spinner;
 import threading;
 import util;
 
@@ -85,35 +89,50 @@ template <> struct std::formatter<TimingStats> {
 }
 
 template <auto ParseFn, auto Part1Fn, auto Part2Fn>
-[[nodiscard]] [[gnu::noinline]] static TimingStats SolveDay(unsigned day_num) noexcept {
-
+[[nodiscard]] [[gnu::noinline]] static TimingStats SolveDay(Spinner& spinner, unsigned day_num) noexcept {
+  std::print("│  {0:02d} │ {1:15s} │ {1:15s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {2} │\r",
+             day_num,
+             "",
+             Emoji(day_num));
   std::string const filename{std::format("inputs/Day{:02d}.txt", day_num)};
   using ClockType = std::chrono::steady_clock;
+
+  spinner.Enable();
+  spinner.SetLocation(44);
+
   ClockType::time_point const t0 = ClockType::now();
   std::string const input{util::ReadFile(filename.c_str())};
   for (int i = 1; i < TimingStats::repetitions; ++i) {
     std::ignore = util::ReadFile(filename.c_str());
   }
-  ClockType::time_point const t1 = ClockType::now();
+  ClockType::time_point t1 = ClockType::now();
+  auto const io_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count();
+  spinner.SetLocation(53);
+  t1 = ClockType::now();
   auto data = ParseFn(input);
   for (int i = 1; i < TimingStats::repetitions; ++i) {
     std::ignore = ParseFn(input);
   }
-  ClockType::time_point const t2 = ClockType::now();
+  ClockType::time_point t2 = ClockType::now();
+  auto const parse_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
+  spinner.SetLocation(62);
+  t2 = ClockType::now();
   auto const part1 = Part1Fn(data);
   for (int i = 1; i < TimingStats::repetitions; ++i) {
     std::ignore = Part1Fn(data);
   }
-  ClockType::time_point const t3 = ClockType::now();
+  ClockType::time_point t3 = ClockType::now();
+  auto const part1_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count();
+  spinner.SetLocation(71);
+  t3 = ClockType::now();
   auto const part2 = Part2Fn(data, part1);
   for (int i = 1; i < TimingStats::repetitions; ++i) {
     std::ignore = Part2Fn(data, part1);
   }
   ClockType::time_point const t4 = ClockType::now();
-  TimingStats const stats{/*io=*/std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count(),
-                          /*parse=*/std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count(),
-                          /*part1=*/std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count(),
-                          /*part2=*/std::chrono::duration_cast<std::chrono::nanoseconds>(t4 - t3).count()};
+  auto const part2_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t4 - t3).count();
+  spinner.Disable();
+  TimingStats const stats{io_time, parse_time, part1_time, part2_time};
   auto p1 = std::to_string(part1);
   auto p2 = std::to_string(part2);
   if (mask) {
@@ -141,7 +160,10 @@ constexpr std::array DAYS{SolveDay<&Day01Parse, &Day01Part1, &Day01Part2>,
                           SolveDay<&Day10Parse, &Day10Part1, &Day10Part2>};
 
 int main(int argc, char* argv[]) {
+  bool const has_tty{static_cast<bool>(::isatty(STDOUT_FILENO))};
+  std::println("Has TTY? {}", has_tty);
   threading::Initialize();
+  Spinner spinner{has_tty};
   std::vector<std::string_view> args{argv, argv + argc};
   if (args.size() > 1) {
     std::ignore = std::from_chars(args[1].begin(), args[1].end(), TimingStats::repetitions);
@@ -164,7 +186,7 @@ int main(int argc, char* argv[]) {
   std::println("│ Day │          Part 1 │          Part 2 │  I/O   │ Parse  │ Part 1 │ Part 2 │ Total  │ 🏆 │");
   std::println("├─────┼─────────────────┼─────────────────┼────────┼────────┼────────┼────────┼────────┼────┤");
   for (auto&& [day, fn] : std::views::zip(std::views::iota(1U), DAYS)) {
-    stats += fn(day);
+    stats += fn(spinner, day);
   }
   std::println("╰─────┼─────────────────┴─────────────────┼────────┼────────┼────────┼────────┼────────┼────╯");
   std::println("      │ AoC++ 2024 in C++23 by willkill07 │ {} │", stats);
