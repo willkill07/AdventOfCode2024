@@ -26,8 +26,6 @@ export struct Day05ParsedType {
 };
 export using Day05AnswerType = int;
 
-namespace stdv = std::views;
-
 constexpr auto Rule = [](std::ranges::random_access_range auto&& array, int a, int b) -> decltype(auto) {
   return array[static_cast<std::uint32_t>(a * Size + b)];
 };
@@ -41,45 +39,46 @@ export Day05ParsedType Day05Parse(std::string_view input) noexcept {
     Rule(parsed.rules, a.to_number() - Lower, b.to_number() - Lower) = true;
   }
   parsed.updates = ctre::split<"\n">(input.substr(split + 2)) |
-                   stdv::filter([](auto&& line) { return line.size() > 0; }) |
-                   stdv::transform([](auto&& line) {
-                     return ctre::search_all<R"(\d\d)">(line) |
-                            stdv::transform([](auto&& num) { return num.to_number() - Lower; }) |
+                   std::views::filter([](auto&& line) { return line.size() > 0; }) |
+                   std::views::transform([]<typename Line>(Line&& line) {
+                     return ctre::search_all<R"(\d\d)">(std::forward<Line>(line)) |
+                            std::views::transform([](auto&& num) { return num.to_number() - Lower; }) |
                             std::ranges::to<Update>();
                    }) |
                    std::ranges::to<std::vector>();
   return parsed;
 }
 
-constexpr auto CheckSorted = [](Rules const& rules, std::vector<int> const& update) {
-  // manually writing is much faster than using C++ standard library
-  for (auto i = std::next(update.begin()); i != update.end(); ++i) {
-    if (not Rule(rules, *std::prev(i), *i)) {
-      return false;
-    }
-  }
-  return true;
+constexpr auto Comparator = [](Rules const& rules) {
+  return [&rules](int a, int b) { return Rule(rules, a, b); };
 };
 
-constexpr auto GetMidpoint = [](auto&& range) { return Lower + range[range.size() / 2]; };
+constexpr auto CheckSorted = []<typename Comp>(Comp&& comparator, std::vector<int> const& update) {
+  return std::ranges::is_sorted(update, std::forward<Comp>(comparator));
+};
+
+constexpr auto GetMidpoint = [](std::vector<int> const& range) { return Lower + range[range.size() / 2]; };
 
 export Day05AnswerType Day05Part1(Day05ParsedType const& data) {
-  return std::ranges::fold_left(
-      stdv::transform(stdv::filter(data.updates, std::bind_front(CheckSorted, data.rules)), GetMidpoint),
-      0,
-      std::plus{});
+  auto check = std::bind_front(CheckSorted, Comparator(data.rules));
+  return std::ranges::fold_left(data.updates | std::views::filter(std::move(check)) |
+                                    std::views::transform(GetMidpoint),
+                                0,
+                                std::plus{});
 }
 
-constexpr auto SortAndGetMidpoint = [](Rules const& rules, std::vector<int> update) {
-  if (CheckSorted(rules, update)) {
-    return 0;
-  }
-  std::ranges::sort(update, std::bind_front(Rule, rules));
+constexpr auto SortAndGetMidpoint = [](auto&& comparator, std::vector<int> update) {
+  auto midpoint = update.begin() + static_cast<long>(update.size() / 2);
+  std::ranges::nth_element(update, midpoint, comparator);
   return GetMidpoint(update);
 };
 
 export Day05AnswerType Day05Part2(Day05ParsedType const& data,
                                   [[maybe_unused]] Day05AnswerType const& answer) {
-  return std::ranges::fold_left(
-      stdv::transform(data.updates, std::bind_front(SortAndGetMidpoint, data.rules)), 0, std::plus{});
+  auto check = std::not_fn(std::bind_front(CheckSorted, Comparator(data.rules)));
+  auto action = std::bind_front(SortAndGetMidpoint, Comparator(data.rules));
+  return std::ranges::fold_left(data.updates | std::views::filter(std::move(check)) |
+                                    std::views::transform(std::move(action)),
+                                0,
+                                std::plus{});
 }

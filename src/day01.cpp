@@ -36,19 +36,15 @@ export Day01AnswerType Day01Part1(Day01ParsedType const& data) noexcept {
 
 export Day01AnswerType Day01Part2(Day01ParsedType const& data,
                                   [[maybe_unused]] Day01AnswerType const& answer) {
-  long offset{0};
-  std::ranges::random_access_range auto a = std::views::keys(data);
-  std::ranges::random_access_range auto b = std::views::values(data);
-  std::ranges::random_access_range auto check{b | std::views::drop(0)};
-  
-  auto compute = [&](long x) noexcept -> long {
-    auto skip_range = check | std::views::take_while(std::bind_front(std::greater{}, x));
-    long const skip{std::ranges::distance(skip_range)};
-    auto dist_range = check | std::views::drop(skip) | std::views::take_while(std::bind_front(std::equal_to{}, x));
-    long const dist{std::ranges::distance(dist_range)};
-    offset += skip + dist;
-    check = b | std::views::drop(offset);
-    return x * dist;
+  auto a = std::views::keys(data);
+  auto b = std::views::values(data);
+  // clang-format off
+  auto reduce = [](auto&& pair, long x) {
+    auto [acc, i] = pair;
+    auto j = i; while (x > *j) { ++j; }
+    auto k = j; while (x == *k) { ++k; }
+    return std::pair{acc + x * std::distance(j, k), i + std::distance(i, k)};
   };
-  return std::ranges::fold_left(std::views::transform(a, compute), 0L, std::plus{});
+  // clang-format on
+  return std::ranges::fold_left(a, std::pair{0L, b.begin()}, std::move(reduce)).first;
 }
