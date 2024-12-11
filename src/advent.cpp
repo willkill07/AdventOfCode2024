@@ -23,6 +23,15 @@ import spinner;
 import threading;
 import util;
 
+constexpr auto GetTimeAndUnits = [](long num) -> std::pair<long, std::string_view> {
+  unsigned offset{0};
+  while (num >= 10'000) {
+    num /= 1'000;
+    ++offset;
+  }
+  return std::pair{num, std::array{"ns", "µs", "ms", " s", "Ks", "Ms"}[offset]};
+};
+
 struct TimingStats {
   static inline int repetitions{1};
 
@@ -58,19 +67,12 @@ template <> struct std::formatter<TimingStats> {
 
   // NOLINTNEXTLINE(readability-identifier-naming)
   inline auto format(TimingStats const& obj, std::format_context& ctx) const {
-    auto get_number_and_label = [](long num) -> std::pair<long, std::string_view> {
-      unsigned offset{0};
-      while (num >= 10'000) {
-        num /= 1'000;
-        ++offset;
-      }
-      return std::pair{num, std::array{"ns", "µs", "ms", " s", "Ks", "Ms"}[offset]};
-    };
-    auto [io, iol] = get_number_and_label(obj.io / TimingStats::repetitions);
-    auto [p, pl] = get_number_and_label(obj.parse / TimingStats::repetitions);
-    auto [p1, p1l] = get_number_and_label(obj.part1 / TimingStats::repetitions);
-    auto [p2, p2l] = get_number_and_label(obj.part2 / TimingStats::repetitions);
-    auto [t, tl] = get_number_and_label(obj.total);
+
+    auto [io, iol] = GetTimeAndUnits(obj.io / TimingStats::repetitions);
+    auto [p, pl] = GetTimeAndUnits(obj.parse / TimingStats::repetitions);
+    auto [p1, p1l] = GetTimeAndUnits(obj.part1 / TimingStats::repetitions);
+    auto [p2, p2l] = GetTimeAndUnits(obj.part2 / TimingStats::repetitions);
+    auto [t, tl] = GetTimeAndUnits(obj.total);
     // clang-format off
     return std::format_to(ctx.out(), "{:>4}{:2s} │ {:>4}{:2s} │ {:>4}{:2s} │ {:>4}{:2s} │ {:>4}{:2s}",
                           io, iol, p, pl, p1, p1l, p2, p2l, t, tl);
@@ -91,24 +93,34 @@ template <> struct std::formatter<TimingStats> {
 
 template <auto ParseFn, auto Part1Fn, auto Part2Fn>
 [[nodiscard]] [[gnu::noinline]] static TimingStats SolveDay(Spinner& spinner, unsigned day_num) noexcept {
-  std::print("│  {0:02d} │ {1:15s} │ {1:15s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {2} │\r",
-             day_num,
-             "",
-             Emoji(day_num));
+
   std::string const filename{std::format("inputs/Day{:02d}.txt", day_num)};
   using ClockType = std::chrono::steady_clock;
 
-  spinner.Enable();
-  spinner.SetLocation(44);
+  if (spinner.HasTTY()) {
+    std::print("│  {0:02d} │ {1:15s} │ {1:15s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {2} │\r",
+               day_num,
+               "",
+               Emoji(day_num));
+    spinner.Enable();
+    spinner.SetLocation(44);
+  }
 
+  // File IO
   ClockType::time_point const t0 = ClockType::now();
-  std::string const input{util::ReadFile(filename.c_str())};
+  std::string input{util::ReadFile(filename.c_str())};
   for (int i = 1; i < TimingStats::repetitions; ++i) {
     std::ignore = util::ReadFile(filename.c_str());
   }
   ClockType::time_point t1 = ClockType::now();
   auto const io_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count();
-  spinner.SetLocation(53);
+  if (spinner.HasTTY()) {
+    auto [time, units] = GetTimeAndUnits(io_time / TimingStats::repetitions);
+    spinner.PutTime(TimeType::File, time, units);
+    spinner.SetLocation(53);
+  }
+
+  // Parsing
   t1 = ClockType::now();
   auto data = ParseFn(input);
   for (int i = 1; i < TimingStats::repetitions; ++i) {
@@ -116,15 +128,32 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
   }
   ClockType::time_point t2 = ClockType::now();
   auto const parse_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
-  spinner.SetLocation(62);
+  if (spinner.HasTTY()) {
+    auto [time, units] = GetTimeAndUnits(parse_time / TimingStats::repetitions);
+    spinner.PutTime(TimeType::Parse, time, units);
+    spinner.SetLocation(62);
+  }
+
+  // Part 1
   t2 = ClockType::now();
-  auto const part1 = Part1Fn(data);
+  auto part1 = Part1Fn(data);
   for (int i = 1; i < TimingStats::repetitions; ++i) {
     std::ignore = Part1Fn(data);
   }
   ClockType::time_point t3 = ClockType::now();
   auto const part1_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count();
-  spinner.SetLocation(71);
+  auto p1 = std::to_string(part1);
+  if (mask) {
+    std::ranges::fill(p1, 'X');
+  }
+  if (spinner.HasTTY()) {
+    auto [time, units] = GetTimeAndUnits(part1_time / TimingStats::repetitions);
+    spinner.PutTime(TimeType::Part1, time, units);
+    spinner.PutAnswer(AnswerType::Part1, p1);
+    spinner.SetLocation(71);
+  }
+
+  // Part 2
   t3 = ClockType::now();
   auto const part2 = Part2Fn(data, part1);
   for (int i = 1; i < TimingStats::repetitions; ++i) {
@@ -132,20 +161,29 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
   }
   ClockType::time_point const t4 = ClockType::now();
   auto const part2_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t4 - t3).count();
-  spinner.Disable();
-  TimingStats const stats{io_time, parse_time, part1_time, part2_time};
-  auto p1 = std::to_string(part1);
   auto p2 = std::to_string(part2);
   if (mask) {
-    std::ranges::fill(p1, 'X');
     std::ranges::fill(p2, 'X');
   }
-  std::println("│  {:02d} │ {: >15} │ {: >15} │ {} │ {:s} │",
+
+  TimingStats const stats{io_time, parse_time, part1_time, part2_time};
+  if (spinner.HasTTY()) {
+    auto [time, units] = GetTimeAndUnits(part2_time / TimingStats::repetitions);
+    spinner.PutTime(TimeType::Part2, time, units);
+    spinner.PutAnswer(AnswerType::Part2, p2);
+    auto [total_time, total_units] = GetTimeAndUnits(stats.total);
+    spinner.PutTime(TimeType::Total, total_time, total_units);
+    spinner.Disable();
+    spinner.Sync();
+    std::println("");
+  } else {
+    std::println("│  {:02d} │ {: >15} │ {: >15} │ {} │ {:s} │",
                day_num,
                std::move(p1),
                std::move(p2),
                stats,
                Emoji(day_num));
+  }
   return stats;
 }
 
@@ -163,7 +201,6 @@ constexpr std::array DAYS{SolveDay<&Day01Parse, &Day01Part1, &Day01Part2>,
 
 int main(int argc, char* argv[]) {
   bool const has_tty{static_cast<bool>(::isatty(STDOUT_FILENO))};
-  std::println("Has TTY? {}", has_tty);
   threading::Initialize();
   Spinner spinner{has_tty};
   std::vector<std::string_view> args{argv, argv + argc};
