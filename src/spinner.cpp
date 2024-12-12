@@ -18,7 +18,7 @@ export enum class TimeType : unsigned { File, Parse, Part1, Part2, Total };
 
 namespace {
 
-unsigned Column(TimeType type) {
+constexpr unsigned Column(TimeType type) noexcept {
   switch (type) {
   case TimeType::File:
     return 44;
@@ -33,7 +33,7 @@ unsigned Column(TimeType type) {
   }
 }
 
-unsigned Column(AnswerType type) {
+constexpr unsigned Column(AnswerType type) noexcept {
   switch (type) {
   case AnswerType::Part1:
     return 8;
@@ -41,12 +41,15 @@ unsigned Column(AnswerType type) {
     return 26;
   }
 }
-std::string_view Format(TimeType) {
+constexpr std::string_view Format(TimeType) noexcept {
   return "{:>4}{:2s}";
 }
-std::string_view Format(AnswerType) {
+constexpr std::string_view Format(AnswerType) noexcept {
   return "{:>15}";
 }
+
+using TimeArgs = std::tuple<long, std::string_view>;
+using AnswerArgs = std::tuple<std::string_view>;
 
 } // namespace
 
@@ -94,15 +97,13 @@ static constexpr auto PrintSpinner = [](unsigned column) {
 
 export class Spinner {
   bool has_tty_;
+  std::atomic<bool> enabled_{false};
   std::atomic<unsigned> offset_{0};
-  std::jthread thread_;
   std::mutex mutex_;
   std::condition_variable_any cv_;
-  std::atomic<bool> enabled_{false};
-  std::optional<std::tuple<unsigned,
-                           std::string_view,
-                           std::variant<std::tuple<long, std::string_view>, std::tuple<std::string>>>>
-      data_{std::nullopt};
+  std::jthread thread_;
+  std::optional<std::tuple<unsigned, std::string_view, std::variant<TimeArgs, AnswerArgs>>> data_{
+      std::nullopt};
 
   void Run(std::stop_token const& token) {
     if (not has_tty_) {
@@ -110,9 +111,9 @@ export class Spinner {
     }
     std::unique_lock lock{mutex_};
     while (not token.stop_requested()) {
-      cv_.wait_for(lock, token, std::chrono::milliseconds{50}, [&, this]() { return data_.has_value(); });
+      cv_.wait_for(lock, token, std::chrono::milliseconds{50}, [&]() { return data_.has_value(); });
       if (data_.has_value()) {
-        std::apply(print, *data_);
+        std::apply(print, std::move(*data_));
         data_.reset();
         cv_.notify_all();
       } else if (enabled_.load()) {
@@ -125,40 +126,39 @@ public:
   Spinner(bool has_tty) : has_tty_{has_tty}, thread_{std::bind_front(&Spinner::Run, this)} {
   }
 
-  ~Spinner() {
-    thread_.request_stop();
-    thread_.join();
-  }
-
   void PutTime(TimeType type, long value, std::string_view units) {
-    if (has_tty_) {
-      std::unique_lock lock{mutex_};
-      cv_.wait(lock, [&] { return not data_.has_value(); });
-      data_.emplace(Column(type), Format(type), std::tuple{value, units});
-      cv_.notify_one();
+    if (not has_tty_) {
+      return;
     }
+    std::unique_lock lock{mutex_};
+    cv_.wait(lock, [&] { return not data_.has_value(); });
+    data_.emplace(Column(type), Format(type), std::tuple{value, units});
+    cv_.notify_one();
   }
 
-  void PutAnswer(AnswerType type, std::string string) {
-    if (has_tty_) {
-      std::unique_lock lock{mutex_};
-      cv_.wait(lock, [&] { return not data_.has_value(); });
-      data_.emplace(Column(type), Format(type), std::tuple{std::move(string)});
-      cv_.notify_one();
+  void PutAnswer(AnswerType type, std::string_view string) {
+    if (not has_tty_) {
+      return;
     }
+    std::unique_lock lock{mutex_};
+    cv_.wait(lock, [&] { return not data_.has_value(); });
+    data_.emplace(Column(type), Format(type), std::tuple{string});
+    cv_.notify_one();
   }
 
   void Sync() {
-    if (has_tty_) {
-      std::unique_lock lock{mutex_};
-      cv_.wait(lock, [&]() { return not data_.has_value(); });
+    if (not has_tty_) {
+      return;
     }
+    std::unique_lock lock{mutex_};
+    cv_.wait(lock, [&]() { return not data_.has_value(); });
   }
 
   void SetLocation(unsigned index) {
-    if (has_tty_) {
-      offset_.store(index);
+    if (not has_tty_) {
+      return;
     }
+    offset_.store(index);
   }
 
   [[nodiscard]] bool HasTTY() const noexcept {
@@ -166,14 +166,16 @@ public:
   }
 
   void Enable() {
-    if (has_tty_) {
-      enabled_.store(true);
+    if (not has_tty_) {
+      return;
     }
+    enabled_.store(true);
   }
 
   void Disable() {
-    if (has_tty_) {
-      enabled_.store(false);
+    if (not has_tty_) {
+      return;
     }
+    enabled_.store(false);
   }
 };
