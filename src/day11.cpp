@@ -99,14 +99,12 @@ export Day11ParsedType Day11Parse(std::string_view input) noexcept {
 static void
 Step(std::vector<Target> const& edges, std::vector<long>& counts_in, std::vector<long>& counts_out) {
   for (auto [i, count] : std::views::enumerate(counts_in)) {
-    if (count > 0) {
-      Target const& out = edges[static_cast<unsigned>(i)];
-      counts_out[out.a] += count;
-      if (out.b != 0xFFFFFFFF) {
-        counts_out[out.b] += count;
-      }
-      count = 0;
+    Target const& out = edges[static_cast<unsigned>(i)];
+    counts_out[out.a] += count;
+    if (out.b != 0xFFFFFFFF) {
+      counts_out[out.b] += count;
     }
+    count = 0;
   }
 }
 
