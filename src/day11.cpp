@@ -108,21 +108,23 @@ Step(std::vector<Target> const& edges, std::vector<long>& counts_in, std::vector
   }
 }
 
+static std::vector<long> part1_counts;
+
 export Day11AnswerType Day11Part1(Day11ParsedType const& data) noexcept {
-  std::vector counts{data.counts};
-  std::vector empty(counts.size(), 0L);
+  part1_counts.assign(data.counts.begin(), data.counts.end());
+  std::vector empty(part1_counts.size(), 0L);
   for (int i = 0; i < 25; ++i) {
-    Step(data.edges, counts, empty);
-    std::swap(counts, empty);
+    Step(data.edges, part1_counts, empty);
+    std::swap(part1_counts, empty);
   }
-  return std::ranges::fold_left(counts, 0L, std::plus{});
+  return std::ranges::fold_left(part1_counts, 0L, std::plus{});
 }
 
 export Day11AnswerType Day11Part2(Day11ParsedType const& data,
                                   [[maybe_unused]] Day11AnswerType const& answer) {
-  std::vector counts{data.counts};
+  std::vector counts{part1_counts};
   std::vector empty(counts.size(), 0L);
-  for (int i = 0; i < 75; ++i) {
+  for (int i = 0; i < 50; ++i) {
     Step(data.edges, counts, empty);
     std::swap(counts, empty);
   }

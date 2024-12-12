@@ -19,6 +19,7 @@ import day08;
 import day09;
 import day10;
 import day11;
+import day12;
 import spinner;
 import threading;
 import util;
@@ -197,7 +198,8 @@ constexpr std::array DAYS{SolveDay<&Day01Parse, &Day01Part1, &Day01Part2>,
                           SolveDay<&Day08Parse, &Day08Part1, &Day08Part2>,
                           SolveDay<&Day09Parse, &Day09Part1, &Day09Part2>,
                           SolveDay<&Day10Parse, &Day10Part1, &Day10Part2>,
-                          SolveDay<&Day11Parse, &Day11Part1, &Day11Part2>};
+                          SolveDay<&Day11Parse, &Day11Part1, &Day11Part2>,
+                          SolveDay<&Day12Parse, &Day12Part1, &Day12Part2>};
 
 int main(int argc, char* argv[]) {
   bool const has_tty{static_cast<bool>(::isatty(STDOUT_FILENO))};
