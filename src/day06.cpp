@@ -1,7 +1,6 @@
 module;
 
 #include <algorithm>
-#include <atomic>
 #include <ranges>
 #include <string_view>
 #include <utility>
@@ -36,7 +35,7 @@ struct Guard {
   }
 
   [[nodiscard]] constexpr inline std::size_t Index(auto dim) const noexcept {
-    return loc.Index(dim) * 4LU + static_cast<std::size_t>(std::to_underlying(dir));
+    return loc.Index(dim) + static_cast<std::size_t>(std::to_underlying(dir)) * dim * dim;
   }
 
   constexpr bool operator==(Guard const& rhs) const noexcept = default;
@@ -182,7 +181,7 @@ export Day06AnswerType Day06Part2(Day06ParsedType const& mapping,
   threading::ParallelForEach(path, [&](Guard const& guard) {
     Point const obstacle{guard.loc + guard.dir};
     if (mapping.InBounds(obstacle) and mapping.HasCycle(guard, obstacle)) {
-      std::atomic_ref{added[obstacle.Index(mapping.dim)]} = 'X';
+      added[obstacle.Index(mapping.dim)] = 'X';
     }
   });
   return std::ranges::count(added, 'X');
