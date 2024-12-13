@@ -1,6 +1,7 @@
 #include <charconv>
 #include <chrono>
 #include <format>
+#include <iostream>
 #include <print>
 #include <ranges>
 #include <vector>
@@ -84,7 +85,7 @@ template <> struct std::formatter<TimingStats> {
 [[nodiscard]] constexpr std::string_view Emoji(std::size_t num) {
   using std::string_view_literals::operator""sv;
   constexpr std::array const e{
-      ""sv, "🍪"sv, "👺"sv, "🖋️ "sv, "🎥"sv, "🔥"sv, "🛋️ "sv, "🧮"sv, "🏎️ "sv, "🎆"sv, "🤩"sv, "🐠"sv};
+      ""sv, "🍪"sv, "👺"sv, "🎨"sv, "🎥"sv, "🔥"sv, "🐱"sv, "🧮"sv, "💨"sv, "💥"sv, "🤩"sv, "🐠"sv, "💻"sv};
   if (num >= e.size()) {
     return "??";
   } else {
@@ -99,10 +100,11 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
   using ClockType = std::chrono::steady_clock;
 
   if (spinner.HasTTY()) {
-    std::print("│  {0:02d} │ {1:15s} │ {1:15s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {2} │\r",
+    std::print("│  {0:02d} │ {1:15s} │ {1:15s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {2} │",
                day_num,
                "",
                Emoji(day_num));
+    std::cout.flush();
     spinner.Enable();
     spinner.SetLocation(44);
   }
@@ -177,8 +179,9 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
     spinner.Disable();
     spinner.Sync();
     std::println("");
+    std::cout.flush();
   } else {
-    std::println("│  {:02d} │ {: >15} │ {: >15} │ {} │ {:s} │",
+    std::println("│  {:02d} │ {: <15} │ {: >15} │ {} │ {:s} │",
                day_num,
                std::move(p1),
                std::move(p2),

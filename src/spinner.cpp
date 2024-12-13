@@ -2,11 +2,13 @@ module;
 
 #include <atomic>
 #include <chrono>
+#include <concepts>
 #include <condition_variable>
 #include <functional>
-#include <iostream>
 #include <mutex>
+#include <print>
 #include <random>
+#include <ranges>
 #include <thread>
 #include <utility>
 
@@ -45,13 +47,11 @@ constexpr std::string_view Format(TimeType) noexcept {
   return "{:>4}{:2s}";
 }
 constexpr std::string_view Format(AnswerType) noexcept {
-  return "{:>15}";
+  return "{: <15}";
 }
 
 using TimeArgs = std::tuple<long, std::string_view>;
 using AnswerArgs = std::tuple<std::string_view>;
-
-} // namespace
 
 static auto const print = [](unsigned column, std::string_view format, auto const& variant) {
   std::visit(
@@ -61,39 +61,132 @@ static auto const print = [](unsigned column, std::string_view format, auto cons
               return std::vformat(format, std::make_format_args(std::forward<Args>(args)...));
             },
             arguments);
-        (std::cout << "\r\033[" << column << 'C' << string << '\r').flush();
+        char buffer[128];
+        std::ranges::fill(buffer, 0);
+        auto out = std::format_to(buffer, "\r\033[{}C{}\r", column, string);
+        write(0, buffer, static_cast<std::size_t>(out - buffer));
       },
       variant);
 };
 
-static constexpr auto PrintSpinner = [](unsigned column) {
-  static std::size_t index{0};
-  static std::minstd_rand rng{0};
-  // TODO: programmatically generate
-  constexpr static std::string_view bar{
-      "\u2800\u2801\u2802\u2803\u2804\u2805\u2806\u2807\u2808\u2809\u280A\u280B\u280C\u280D\u280E\u280F"
-      "\u2810\u2811\u2812\u2813\u2814\u2815\u2816\u2817\u2818\u2819\u281A\u281B\u281C\u281D\u281E\u281F"
-      "\u2820\u2821\u2822\u2823\u2824\u2825\u2826\u2827\u2828\u2829\u282A\u282B\u282C\u282D\u282E\u282F"
-      "\u2830\u2831\u2832\u2833\u2834\u2835\u2836\u2837\u2838\u2839\u283A\u283B\u283C\u283D\u283E\u283F"
-      "\u2840\u2841\u2842\u2843\u2844\u2845\u2846\u2847\u2848\u2849\u284A\u284B\u284C\u284D\u284E\u284F"
-      "\u2850\u2851\u2852\u2853\u2854\u2855\u2856\u2857\u2858\u2859\u285A\u285B\u285C\u285D\u285E\u285F"
-      "\u2860\u2861\u2862\u2863\u2864\u2865\u2866\u2867\u2868\u2869\u286A\u286B\u286C\u286D\u286E\u286F"
-      "\u2870\u2871\u2872\u2873\u2874\u2875\u2876\u2877\u2878\u2879\u287A\u287B\u287C\u287D\u287E\u287F"
-      "\u2880\u2881\u2882\u2883\u2884\u2885\u2886\u2887\u2888\u2889\u288A\u288B\u288C\u288D\u288E\u288F"
-      "\u2890\u2891\u2892\u2893\u2894\u2895\u2896\u2897\u2898\u2899\u289A\u289B\u289C\u289D\u289E\u289F"
-      "\u28A0\u28A1\u28A2\u28A3\u28A4\u28A5\u28A6\u28A7\u28A8\u28A9\u28AA\u28AB\u28AC\u28AD\u28AE\u28AF"
-      "\u28B0\u28B1\u28B2\u28B3\u28B4\u28B5\u28B6\u28B7\u28B8\u28B9\u28BA\u28BB\u28BC\u28BD\u28BE\u28BF"
-      "\u28C0\u28C1\u28C2\u28C3\u28C4\u28C5\u28C6\u28C7\u28C8\u28C9\u28CA\u28CB\u28CC\u28CD\u28CE\u28CF"
-      "\u28D0\u28D1\u28D2\u28D3\u28D4\u28D5\u28D6\u28D7\u28D8\u28D9\u28DA\u28DB\u28DC\u28DD\u28DE\u28DF"
-      "\u28E0\u28E1\u28E2\u28E3\u28E4\u28E5\u28E6\u28E7\u28E8\u28E9\u28EA\u28EB\u28EC\u28ED\u28EE\u28EF"
-      "\u28F0\u28F1\u28F2\u28F3\u28F4\u28F5\u28F6\u28F7\u28F8\u28F9\u28FA\u28FB\u28FC\u28FD\u28FE\u28FF"};
-  std::cout << "\r\033[" << column << 'C';
-  for (int i = 0; i < 6; ++i) {
-    index = rng() % (bar.size() / 3);
-    std::cout << bar.substr(index * 3, 3);
-  }
-  (std::cout << '\r').flush();
+template <auto Lo, auto Hi>
+  requires std::same_as<decltype(Lo), decltype(Hi)> and (Lo <= Hi)
+struct SpinnerRange {
+  using Type = std::remove_cvref_t<decltype(Lo)>;
+  constexpr static Type lo = Lo;
+  constexpr static Type hi = Hi;
+  constexpr static unsigned size{Hi - Lo + 1};
+  static_assert(sizeof(Type) <= 2, "Only char and char16_t are supported");
 };
+
+template <typename T>
+concept IsSpinnerRange = requires {
+  typename T::Type;
+  { T::lo } -> std::convertible_to<typename T::Type>;
+  { T::hi } -> std::convertible_to<typename T::Type>;
+  sizeof(T::lo) == sizeof(typename T::Type);
+  sizeof(T::hi) == sizeof(typename T::Type);
+};
+
+enum class Encoding { Ascii = 1, Unicode = 2 };
+
+template <IsSpinnerRange Range> struct SpinnerText {
+private:
+  constexpr static std::size_t Count = (Range::hi - Range::lo) + 1;
+  constexpr static Encoding TextEncoding = static_cast<Encoding>(sizeof(typename Range::Type));
+  constexpr static unsigned Stride = (TextEncoding == Encoding::Ascii) ? 1 : 3;
+
+  consteval static auto MakeTable() {
+    std::array<char, Count * Stride> bytes;
+    unsigned index{0};
+    for (auto i = Range::lo; i <= Range::hi; ++i) {
+      if constexpr (TextEncoding == Encoding::Ascii) {
+        // ASCII -- just copy the character
+        bytes[index++] = i;
+      } else if constexpr (TextEncoding == Encoding::Unicode) {
+        // Need to re-encode unicode characters :upside-down-smiling-face:
+        constexpr char continuation(static_cast<char>(0b10000000));
+        constexpr char three_byte_encode{static_cast<char>(0b11100000)};
+        char x, y;
+        if constexpr (std::endian::native == std::endian::little) {
+          std::tie(y, x) = std::bit_cast<std::array<char, 2>>(i);
+        } else {
+          std::tie(x, y) = std::bit_cast<std::array<char, 2>>(i);
+        }
+        // 0b1110XXXX -- leading byte
+        bytes[index++] = static_cast<char>(three_byte_encode | ((x & 0b11110000) >> 4));
+        // 0b10XXXXYY -- payload byte
+        bytes[index++] = static_cast<char>(continuation | ((x & 0b00001111) << 2) | ((y & 0b11000000) >> 6));
+        // 0b10YYYYYY -- payload byte
+        bytes[index++] = static_cast<char>(continuation | (y & 0b00111111));
+      }
+    }
+    return bytes;
+  }
+
+  constexpr static auto table = MakeTable();
+  constexpr static std::string_view text{table.data(), table.size()};
+
+public:
+  constexpr static std::string_view Get(std::integral auto index) {
+    return text.substr(index * Stride, Stride);
+  }
+
+  constexpr static std::size_t Size() {
+    return text.size() / Stride;
+  }
+};
+
+template <unsigned Count> struct RandomOrder {
+  static void Iterate(unsigned& curr) {
+    static std::minstd_rand rng{0};
+    curr = rng() % Count;
+  }
+};
+
+template <unsigned Count> struct Cycle {
+  static void Iterate(unsigned& curr) {
+    if (++curr == Count) {
+      curr = 0;
+    }
+  }
+};
+
+template <unsigned Count> struct PingPong {
+  static void Iterate(unsigned& curr) {
+    static bool increasing{true};
+    if (increasing and curr + 1 == Count) {
+      increasing = false;
+    }
+    if (not increasing and curr == 0) {
+      increasing = true;
+    }
+    if (increasing) {
+      ++curr;
+    } else {
+      --curr;
+    }
+  }
+};
+
+using SpinnerType = SpinnerText<SpinnerRange<u'⠀', u'⣿'>>;
+using MovementType = RandomOrder<SpinnerType::Size()>;
+constexpr static unsigned Width{6};
+
+static constexpr auto PrintSpinner = [](unsigned column) {
+  static unsigned index{0};
+  char buffer[64];
+  std::ranges::fill(buffer, 0);
+  auto out = std::format_to(buffer, "\r\033[{}C", column);
+  for (auto _ : std::views::iota(0u, Width)) {
+    MovementType::Iterate(index);
+    out = std::format_to(out, "{}", SpinnerType::Get(index));
+  }
+  *out++ = '\r';
+  write(0, buffer, static_cast<std::size_t>(out - buffer));
+};
+
+} // namespace
 
 export class Spinner {
   bool has_tty_;
