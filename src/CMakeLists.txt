@@ -21,6 +21,7 @@ target_sources(AdventOfCode2024
     day10.cpp
     day11.cpp
     day12.cpp
+    day13.cpp
     spinner.cpp
     threading.cpp
     util.cpp)

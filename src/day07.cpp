@@ -16,6 +16,10 @@ export module day07;
 
 template <bool B> constexpr static inline auto Part2 = std::bool_constant<B>{};
 
+static constexpr auto Div = [] <std::integral T>(T a, std::same_as<T> auto b) {
+    return std::pair{a / b, a % b};
+};
+
 template <typename T>
 concept Part2Flag = std::same_as<T, std::bool_constant<true>> or std::same_as<T, std::bool_constant<false>>;
 
@@ -29,14 +33,14 @@ private:
       return target == curr;
     } else if (long diff = target - curr; diff >= 0 and CanReach(diff, iter, part2)) {
       return true;
-    } else if (auto const [q, r] = std::div(target, curr); r == 0 and CanReach(q, iter, part2)) {
+    } else if (auto const [q, r] = Div(target, curr); r == 0 and CanReach(q, iter, part2)) {
       return true;
     } else if constexpr (part2) {
       long num = 10;
       while (curr >= num) {
         num *= 10;
       }
-      if (auto const [left, right] = std::div(target, num); right == curr and CanReach(left, iter, part2)) {
+      if (auto const [left, right] = Div(target, num); right == curr and CanReach(left, iter, part2)) {
         return true;
       }
     }
