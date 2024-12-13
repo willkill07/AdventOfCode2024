@@ -1,13 +1,12 @@
-
 module;
 
 #include <atomic>
-#include <deque>
 #include <string_view>
 #include <vector>
 
 #include <ankerl/unordered_dense.h>
 
+#include "circular_buffer.hpp"
 #include "hashing.hpp"
 #include "point.hpp"
 
@@ -57,23 +56,24 @@ static constexpr auto TransparentInsert = [](auto& container, auto const& value)
 template <typename Container>
 void TraverseFrom(GridWithInfo const& data, std::atomic_long& result, Point const& p) {
   auto grid = [&data](Point const& p) noexcept { return data.grid[p.Index(data.dim + 1)]; };
-  thread_local std::deque<Point> queue;
+  thread_local CircularBuffer<Point> queue{64};
   thread_local Container seen;
   queue.clear();
   seen.clear();
   queue.push_back(p);
   while (not queue.empty()) {
-    Point const curr{queue.front()};
-    queue.pop_front();
+    Point const curr{queue.back()};
+    queue.pop_back();
     if (char const curr_height{grid(curr)}; curr_height == '9') {
       TransparentInsert(seen, curr);
     } else {
+      #pragma unroll
       for (Dir const dir : {Dir::Up, Dir::Down, Dir::Left, Dir::Right}) {
         if (Point const next{curr + dir};           //
             (0 <= next.x and next.x < data.dim) and //
             (0 <= next.y and next.y < data.dim) and //
             grid(next) == curr_height + 1) {
-          queue.push_front(next);
+          queue.push_back(next);
         }
       }
     }
