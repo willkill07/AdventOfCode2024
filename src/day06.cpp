@@ -50,62 +50,12 @@ public:
 private:
   std::string_view grid_;
   std::vector<int> mapping_;
-  std::span<int> up_, right_, down_, left_;
 
-  [[nodiscard]] constexpr inline auto GetDir(this auto&& self, Dir id) noexcept {
-    return std::span{self.mapping_}.subspan(
-        self.dim * self.dim * static_cast<std::size_t>(std::to_underlying(id)), self.dim * self.dim);
+  [[nodiscard]] constexpr inline auto GetOffset(Dir id) const noexcept {
+    return dim * dim * static_cast<std::size_t>(std::to_underlying(id));
   }
 
 public:
-  inline JumpMap(std::string_view grid)
-      : dim{grid.find('\n')},
-        guard{[&] {
-          auto [y, x] = std::div(static_cast<int>(grid.find('^')), static_cast<int>(dim + 1));
-          return Guard{Point{x, y}};
-        }()},
-        grid_{grid},
-        mapping_(dim * dim * 4),
-        up_{GetDir(Dir::Up)},
-        right_{GetDir(Dir::Right)},
-        down_{GetDir(Dir::Down)},
-        left_{GetDir(Dir::Left)} {
-    int const d{static_cast<int>(dim)};
-    auto ordered = std::views::iota(0, d);
-    for (int x : ordered) {
-      std::ranges::fold_left(ordered, -1, [&](int last, int y) {
-        Point const p{x, y};
-        if (grid[p.Index(dim + 1)] == '#') {
-          last = y + 1;
-        }
-        return up_[p.Index(dim)] = last;
-      });
-      std::ranges::fold_right(ordered, d, [&](int y, int last) {
-        Point const p{x, y};
-        if (grid[p.Index(dim + 1)] == '#') {
-          last = y - 1;
-        }
-        return down_[p.Index(dim)] = last;
-      });
-    }
-    for (int y : ordered) {
-      std::ranges::fold_left(ordered, -1, [&](int last, int x) {
-        Point const p{x, y};
-        if (grid[p.Index(dim + 1)] == '#') {
-          last = x + 1;
-        }
-        return left_[p.Index(dim)] = last;
-      });
-      std::ranges::fold_right(ordered, d, [&](int x, int last) {
-        Point const p{x, y};
-        if (grid[p.Index(dim + 1)] == '#') {
-          last = x - 1;
-        }
-        return right_[p.Index(dim)] = last;
-      });
-    }
-  }
-
   [[nodiscard]] bool InBounds(Point const& pos) const noexcept {
     return 0 <= pos.x and std::cmp_less(pos.x, dim) and 0 <= pos.y and std::cmp_less(pos.y, dim);
   }
@@ -114,30 +64,66 @@ public:
     return grid_[pos.Index(dim + 1)];
   }
 
+  inline JumpMap(std::string_view grid)
+      : dim{grid.find('\n')},
+        guard{[&] {
+          auto [y, x] = std::div(static_cast<int>(grid.find('^')), static_cast<int>(dim + 1));
+          return Guard{Point{x, y}};
+        }()},
+        grid_{grid},
+        mapping_(dim * dim * 4) {
+    int const d{static_cast<int>(dim)};
+    auto ordered = std::views::iota(0, d);
+    for (int x : ordered) {
+      for (int last{-1}; int y : ordered) {
+        Point const p{x, y};
+        if (Get(p) == '#') {
+          last = y + 1;
+        }
+        mapping_[p.Index(dim) + GetOffset(Dir::Up)] = last;
+      }
+      for (int last{d}; int y : std::views::reverse(ordered)) {
+        Point const p{x, y};
+        if (Get(p) == '#') {
+          last = y - 1;
+        }
+        mapping_[p.Index(dim) + GetOffset(Dir::Down)] = last;
+      }
+    }
+    for (int y : ordered) {
+      for (int last{-1}; int x : ordered) {
+        Point const p{x, y};
+        if (Get(p) == '#') {
+          last = x + 1;
+        }
+        mapping_[p.Index(dim) + GetOffset(Dir::Left)] = last;
+      }
+      for (int last{d}; int x : std::views::reverse(ordered)) {
+        Point const p{x, y};
+        if (Get(p) == '#') {
+          last = x - 1;
+        }
+        mapping_[p.Index(dim) + GetOffset(Dir::Right)] = last;
+      }
+    }
+  }
+
   void Step(Guard& g, Point const& obstacle) const noexcept {
     auto& [pos, dir] = g;
     Point const end{obstacle - dir};
-    switch (std::size_t const index{pos.Index(dim)}; dir) {
-    case Dir::Up: {
-      int const ny{up_[index]};
-      pos.y = (pos.x == obstacle.x and pos.y > obstacle.y and obstacle.y >= ny) ? end.y : ny;
+    switch (int const limit{mapping_[pos.Index(dim) + GetOffset(dir)]}; dir) {
+    case Dir::Up:
+      pos.y = (pos.x == obstacle.x and pos.y > obstacle.y and obstacle.y >= limit) ? end.y : limit;
       break;
-    }
-    case Dir::Down: {
-      int const ny{down_[index]};
-      pos.y = (pos.x == obstacle.x and pos.y < obstacle.y and obstacle.y <= ny) ? end.y : ny;
+    case Dir::Down:
+      pos.y = (pos.x == obstacle.x and pos.y < obstacle.y and obstacle.y <= limit) ? end.y : limit;
       break;
-    }
-    case Dir::Left: {
-      int const nx{left_[index]};
-      pos.x = (pos.y == obstacle.y and pos.x > obstacle.x and obstacle.x >= nx) ? end.x : nx;
+    case Dir::Left:
+      pos.x = (pos.y == obstacle.y and pos.x > obstacle.x and obstacle.x >= limit) ? end.x : limit;
       break;
-    }
-    case Dir::Right: {
-      int const nx{right_[index]};
-      pos.x = (pos.y == obstacle.y and pos.x < obstacle.x and obstacle.x <= nx) ? end.x : nx;
+    case Dir::Right:
+      pos.x = (pos.y == obstacle.y and pos.x < obstacle.x and obstacle.x <= limit) ? end.x : limit;
       break;
-    }
     }
     g.Turn();
   }
@@ -146,12 +132,12 @@ public:
     thread_local ankerl::unordered_dense::set<int> seen;
     seen.clear();
     while (InBounds(g.loc)) {
-      std::size_t const index{g.Index(dim)};
-      if (auto [_, inserted] = seen.insert(index); not inserted) {
+      int const index{static_cast<int>(g.Index(dim))};
+      if (seen.contains(index)) {
         return true;
-      } else {
-        Step(g, obstacle);
       }
+      seen.insert(index);
+      Step(g, obstacle);
     }
     return false;
   }
