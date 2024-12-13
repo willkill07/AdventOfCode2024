@@ -1,11 +1,7 @@
-target_compile_features(AdventOfCode2024 PUBLIC cxx_std_26)
-target_include_directories(AdventOfCode2024 PRIVATE .)
-target_sources(AdventOfCode2024
-    PRIVATE
-    advent.cpp)
-
-target_sources(AdventOfCode2024
-    PRIVATE
+target_compile_features(Advent PUBLIC cxx_std_26)
+target_include_directories(Advent PRIVATE .)
+target_sources(Advent
+    PUBLIC
     FILE_SET cxx_modules
     TYPE CXX_MODULES
     FILES
@@ -26,4 +22,16 @@ target_sources(AdventOfCode2024
     threading.cpp
     util.cpp)
 
-target_link_libraries(AdventOfCode2024 PRIVATE ctre::ctre unordered_dense::unordered_dense dp::thread-pool)
+target_link_libraries(Advent PRIVATE ctre::ctre unordered_dense::unordered_dense dp::thread-pool)
+
+target_compile_features(AdventOfCode2024 PUBLIC cxx_std_26)
+target_sources(AdventOfCode2024
+    PRIVATE
+    advent.cpp)
+target_link_libraries(AdventOfCode2024 PRIVATE Advent)
+
+target_compile_features(AdventOfCode2024Tests PUBLIC cxx_std_26)
+target_sources(AdventOfCode2024Tests
+    PRIVATE
+    tests.cpp)
+target_link_libraries(AdventOfCode2024Tests PRIVATE Advent Catch2::Catch2WithMain)

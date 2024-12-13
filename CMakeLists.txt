@@ -42,6 +42,20 @@ CPMAddPackage(
     "TP_BUILD_EXAMPLES OFF"  
 )
 
+CPMAddPackage(
+  NAME Catch2
+  GITHUB_REPOSITORY catchorg/Catch2
+  GIT_TAG v3.7.1
+  OPTIONS
+    "CATCH_INSTALL_DOCS OFF"
+    "CATCH_INSTALL_EXTRAS OFF"
+    "CATCH_ENABLE_REPRODUCIBLE_BUILD"
+    "CATCH_BUILD_TESTING OFF"
+    "CATCH_BUILD_EXAMPLES OFF"
+    "CATCH_BUILD_EXTRA_TESTS OFF"
+)
+list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/extras)
+
 add_compile_options(
     -Wall
     -Wextra
@@ -53,5 +67,12 @@ add_compile_options(
     $<$<CXX_COMPILER_ID:GNU>:-Wnrvo>)
 
 add_executable(AdventOfCode2024)
+add_executable(AdventOfCode2024Tests)
+add_library(Advent)
+
+enable_testing()
+include(CTest)
+include(Catch)
+catch_discover_tests(AdventOfCode2024Tests)
 
 add_subdirectory(src)
