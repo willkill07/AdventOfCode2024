@@ -86,8 +86,21 @@ template <> struct std::formatter<TimingStats> {
 
 [[nodiscard]] constexpr std::string_view Emoji(std::size_t num) {
   using std::string_view_literals::operator""sv;
-  constexpr std::array const e{
-      ""sv, "🍪"sv, "👺"sv, "🎨"sv, "🎥"sv, "🔥"sv, "🐱"sv, "🧮"sv, "💨"sv, "💥"sv, "🤩"sv, "🐠"sv, "💻"sv, "🕹️ "sv};
+  constexpr std::array const e{""sv,
+                               "🍪"sv,
+                               "👺"sv,
+                               "🎨"sv,
+                               "🎥"sv,
+                               "🔥"sv,
+                               "🐱"sv,
+                               "🧮"sv,
+                               "💨"sv,
+                               "💥"sv,
+                               "🤩"sv,
+                               "🐠"sv,
+                               "💻"sv,
+                               "🕹️ "sv,
+                               "🤖"sv};
   if (num >= e.size()) {
     return "??";
   } else {
@@ -184,11 +197,11 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
     std::cout.flush();
   } else {
     std::println("│  {:02d} │ {: <15} │ {: >15} │ {} │ {:s} │",
-               day_num,
-               std::move(p1),
-               std::move(p2),
-               stats,
-               Emoji(day_num));
+                 day_num,
+                 std::move(p1),
+                 std::move(p2),
+                 stats,
+                 Emoji(day_num));
   }
   return stats;
 }
