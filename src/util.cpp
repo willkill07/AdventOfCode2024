@@ -1,4 +1,3 @@
-
 module;
 
 #include <functional>
