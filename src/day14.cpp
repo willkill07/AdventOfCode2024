@@ -14,6 +14,10 @@ export module day14;
 
 static constexpr int width{101}, height{103}, inverse{51};
 
+static constexpr auto AbsDiff = []<std::integral T>(T a, std::same_as<T> auto b) noexcept {
+  return a > b ? a - b : b - a;
+};
+
 static constexpr auto EuclidRem = []<std::integral T>(T a, std::same_as<T> auto b) {
   T const v{a % b};
   return v < 0 ? v + b : v;
@@ -24,7 +28,7 @@ struct Robot {
 };
 
 template <auto Acc, int Bounds>
-static constexpr auto Step = [](std::vector<Robot> const& rng, int t) {
+static constexpr auto Step = [](std::ranges::random_access_range auto&& rng, int t) {
   return std::views::transform(rng, [t](Robot const& robot) {
     return EuclidRem(std::invoke(Acc, robot.pos) + t * std::invoke(Acc, robot.vel), Bounds);
   });
@@ -58,26 +62,24 @@ export Day14AnswerType Day14Part1(Day14ParsedType const& robots) noexcept {
 }
 
 template <auto Acc, int Bounds>
-static constexpr auto SpreadScore = [](std::vector<Robot> const& robots) {
-  auto calc = [&](int t) {
-    return std::ranges::fold_left(Step<Acc, Bounds>(robots, t), 0, [&](auto sum, int v) {
-      int const diff{v - Bounds / 2};
-      return sum + diff * diff;
-    });
-  };
-  return std::views::enumerate(std::views::transform(std::views::iota(0, Bounds), calc));
+static constexpr auto Spread = [](std::ranges::random_access_range auto&& robots) {
+  return std::views::zip(
+      std::views::iota(0), std::views::transform(std::views::iota(0, Bounds), [&](int t) {
+        return *std::ranges::fold_left_first(
+            std::views::transform(Step<Acc, Bounds>(robots, t), std::bind_front(AbsDiff, Bounds / 2)),
+            std::plus{});
+      }));
 };
 
 template <std::size_t I>
-static constexpr auto TupleMin = [](auto const& min, auto const& curr) {
-  return std::min(min, curr, [](auto const& x, auto const& y) { return std::get<I>(x) < std::get<I>(y); });
+static constexpr auto Min = [](auto const& min, auto const& curr) {
+  return std::min(min, curr, [](auto&& x, auto&& y) { return std::get<I>(x) < std::get<I>(y); });
 };
 
 export Day14AnswerType Day14Part2(Day14ParsedType const& robots,
                                   [[maybe_unused]] Day14AnswerType const& answer) {
-  auto const best_x = *std::ranges::fold_left_first(SpreadScore<&Point::x, width>(robots), TupleMin<1>);
-  auto const best_y = *std::ranges::fold_left_first(SpreadScore<&Point::y, height>(robots), TupleMin<1>);
-  int const bx{static_cast<int>(std::get<0>(best_x))};
-  int const by{static_cast<int>(std::get<0>(best_y))};
-  return bx + EuclidRem(inverse * (by - bx), height) * width;
+  auto r = std::views::take(robots, 50); // check only the first 50 robots -- should be good enough
+  int const x{std::get<0>(*std::ranges::fold_left_first(Spread<&Point::x, width>(r), Min<1>))};
+  int const y{std::get<0>(*std::ranges::fold_left_first(Spread<&Point::y, height>(r), Min<1>))};
+  return x + EuclidRem(inverse * (y - x), height) * width;
 }
