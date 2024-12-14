@@ -18,6 +18,7 @@ import day10;
 import day11;
 import day12;
 import day13;
+import day14;
 
 template <typename Part1Answer, typename Part2Answer> struct Data {
   constexpr Data(Part1Answer p1, Part2Answer p2, std::string_view input) noexcept
@@ -178,13 +179,17 @@ Button B: X+27, Y+71
 Prize: X=18641, Y=10279
 )"};
 
-#define EMIT_TEST(DayNum)                            \
-  TEST_CASE(#DayNum) {                               \
-    auto parsed = DayNum##Parse(DayNum##Data.input); \
-    auto part1 = DayNum##Part1(parsed);              \
-    auto part2 = DayNum##Part2(parsed, part1);       \
-    REQUIRE(part1 == DayNum##Data.part1);            \
-    REQUIRE(part2 == DayNum##Data.part2);            \
+#define EMIT_TEST(DayNum)                               \
+  TEST_CASE(#DayNum) {                                  \
+    auto parsed = DayNum##Parse(DayNum##Data.input);    \
+    auto part1 = DayNum##Part1(parsed);                 \
+    auto part2 = DayNum##Part2(parsed, part1);          \
+    REQUIRE(part1 == DayNum##Data.part1);               \
+    if (#DayNum == "Day13"sv or #DayNum == "Day14"sv) { \
+      /* No part 2 to test */                           \
+    } else {                                            \
+      REQUIRE(part2 == DayNum##Data.part2);             \
+    }                                                   \
   }
 
 EMIT_TEST(Day01)
@@ -200,3 +205,4 @@ EMIT_TEST(Day10)
 EMIT_TEST(Day11)
 EMIT_TEST(Day12)
 EMIT_TEST(Day13)
+// no tests for 14 due to hard-coded sizes with no way to detect under test

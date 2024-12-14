@@ -15,6 +15,7 @@ import day10;
 import day11;
 import day12;
 import day13;
+import day14;
 
 #define EMIT_BENCHMARK(DayNum) \
   TEST_CASE(#DayNum " Benchmark") { \
@@ -39,3 +40,5 @@ EMIT_BENCHMARK(Day09);
 EMIT_BENCHMARK(Day10);
 EMIT_BENCHMARK(Day11);
 EMIT_BENCHMARK(Day12);
+EMIT_BENCHMARK(Day13);
+EMIT_BENCHMARK(Day14);
