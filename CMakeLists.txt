@@ -68,6 +68,7 @@ add_compile_options(
 
 add_executable(AdventOfCode2024)
 add_executable(AdventOfCode2024Tests)
+add_executable(AdventOfCode2024Benchmarks)
 add_library(Advent)
 
 enable_testing()

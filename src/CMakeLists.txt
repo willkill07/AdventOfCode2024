@@ -35,3 +35,9 @@ target_sources(AdventOfCode2024Tests
     PRIVATE
     tests.cpp)
 target_link_libraries(AdventOfCode2024Tests PRIVATE Advent Catch2::Catch2WithMain)
+
+target_compile_features(AdventOfCode2024Benchmarks PUBLIC cxx_std_26)
+target_sources(AdventOfCode2024Benchmarks
+    PRIVATE
+    benchmarks.cpp)
+target_link_libraries(AdventOfCode2024Benchmarks PRIVATE Advent Catch2::Catch2WithMain)
