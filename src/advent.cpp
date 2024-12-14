@@ -99,7 +99,7 @@ template <> struct std::formatter<TimingStats> {
                                "🤩"sv,
                                "🐠"sv,
                                "💻"sv,
-                               "🕹️ "sv,
+                               "🕹️"sv,
                                "🤖"sv};
   if (num >= e.size()) {
     return "??";
