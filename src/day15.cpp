@@ -108,14 +108,14 @@ export Day15AnswerType Day15Part1(Day15ParsedType const& simulation_data) noexce
 
   for (Dir d : simulation_data.moves) {
     int const offset{offset_for(d)};
-    auto check{loc + offset};
+    auto check{std::next(loc, offset)};
     if (*check == '#') {
       continue;
     }
     if (*check == 'O') {
-      auto next{check + offset};
+      auto next{std::next(check, offset)};
       while (*next == 'O') {
-        next += offset;
+        std::advance(next, offset);
       }
       if (*next == '#') {
         continue;
@@ -144,7 +144,7 @@ export Day15AnswerType Day15Part2(Day15ParsedType const& simulation_data,
 
   for (Dir d : simulation_data.moves) {
     int const offset{offset_for(d)};
-    auto check{loc + offset};
+    auto check{std::next(loc, offset)};
     if (*check == '#') {
       continue;
     }
@@ -152,9 +152,9 @@ export Day15AnswerType Day15Part2(Day15ParsedType const& simulation_data,
       if (d == Dir::Left or d == Dir::Right) {
         // Easy mode -- scan until we don't see a box
 
-        auto next{check + offset};
+        auto next{std::next(check, offset)};
         while (*next == '[' or *next == ']') {
-          next += offset;
+          std::advance(next, offset);
         }
 
         // We encountered a wall -- abort
@@ -164,22 +164,22 @@ export Day15AnswerType Day15Part2(Day15ParsedType const& simulation_data,
 
         // Next must have been a space
         while (next != loc) {
-          std::iter_swap(next, next - offset);
-          next -= offset;
+          std::iter_swap(next, std::prev(next, offset));
+          std::advance(next, -offset);
         }
       } else {
         // Hard mode -- potentially need to move many (or no) boxes
 
         // Provide a convenience function to enqueue new boxes to consider
-        auto add_box = [&boxes](std::string::iterator iter) {
+        auto add_box = [&boxes] [[gnu::always_inline]] (std::string::iterator iter) {
           if (*iter == '[') {
             if (std::views::reverse(boxes)[1] != iter) {
               boxes.push_back(iter);
-              boxes.push_back(iter + 1);
+              boxes.push_back(std::next(iter));
             }
           } else {
             if (std::views::reverse(boxes)[0] != iter) {
-              boxes.push_back(iter - 1);
+              boxes.push_back(std::prev(iter));
               boxes.push_back(iter);
             }
           }
@@ -192,7 +192,7 @@ export Day15AnswerType Day15Part2(Day15ParsedType const& simulation_data,
           for (auto prev = boxes.begin(); prev != boxes.end();) {
             auto end = boxes.end();
             for (auto const box : std::ranges::subrange(prev, end)) {
-              if (auto const next{box + offset}; *next == '.') [[likely]] {
+              if (auto const next{std::next(box, offset)}; *next == '.') [[likely]] {
                 // Nothing to do, but still in a valid state!
               } else if (*next == '#') {
                 // Encountered a wall -- abort immediately
@@ -213,7 +213,8 @@ export Day15AnswerType Day15Part2(Day15ParsedType const& simulation_data,
         }
 
         // Move all of the boxes
-        std::ranges::for_each(std::views::reverse(boxes), [&](auto b) { std::iter_swap(b, b + offset); });
+        std::ranges::for_each(std::views::reverse(boxes),
+                              [&](auto box) { std::iter_swap(box, std::next(box, offset)); });
         boxes.clear();
       }
     }
