@@ -172,17 +172,16 @@ export Day15AnswerType Day15Part2(Day15ParsedType const& simulation_data,
 
         // Provide a convenience function to enqueue new boxes to consider
         auto add_box = [&boxes](std::string::iterator iter) {
-          // If the one we are adding was just added (lookback size of two) then skip
-          if (std::ranges::contains(std::views::take(std::views::reverse(boxes), 2), iter)) {
-            return;
-          }
-          // Always ensure insertion in sorted order
-          if (*iter == '[') { 
-            boxes.push_back(iter);
-            boxes.push_back(iter + 1);
+          if (*iter == '[') {
+            if (std::views::reverse(boxes)[1] != iter) {
+              boxes.push_back(iter);
+              boxes.push_back(iter + 1);
+            }
           } else {
-            boxes.push_back(iter - 1);
-            boxes.push_back(iter);
+            if (std::views::reverse(boxes)[0] != iter) {
+              boxes.push_back(iter - 1);
+              boxes.push_back(iter);
+            }
           }
         };
 
