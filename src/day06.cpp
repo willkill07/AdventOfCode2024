@@ -25,7 +25,7 @@ struct Guard {
   }
 
   constexpr inline void Turn() noexcept {
-    dir = Dir{(std::to_underlying(dir) + 1) & 0x3};
+    dir = Dir((std::to_underlying(dir) + 1) & 0x3);
   }
 
   constexpr inline Guard Move() noexcept {

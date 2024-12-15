@@ -23,6 +23,7 @@ import day11;
 import day12;
 import day13;
 import day14;
+import day15;
 import spinner;
 import threading;
 import util;
@@ -100,7 +101,8 @@ template <> struct std::formatter<TimingStats> {
                                "🐠"sv,
                                "💻"sv,
                                "🕹️"sv,
-                               "🤖"sv};
+                               "🤖"sv,
+                               "📦"sv};
   if (num >= e.size()) {
     return "??";
   } else {
@@ -219,7 +221,8 @@ constexpr std::array DAYS{SolveDay<&Day01Parse, &Day01Part1, &Day01Part2>,
                           SolveDay<&Day11Parse, &Day11Part1, &Day11Part2>,
                           SolveDay<&Day12Parse, &Day12Part1, &Day12Part2>,
                           SolveDay<&Day13Parse, &Day13Part1, &Day13Part2>,
-                          SolveDay<&Day14Parse, &Day14Part1, &Day14Part2>};
+                          SolveDay<&Day14Parse, &Day14Part1, &Day14Part2>,
+                          SolveDay<&Day15Parse, &Day15Part1, &Day15Part2>};
 
 int main(int argc, char* argv[]) {
   bool const has_tty{static_cast<bool>(::isatty(STDOUT_FILENO))};

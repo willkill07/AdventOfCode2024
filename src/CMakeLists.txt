@@ -19,6 +19,7 @@ target_sources(Advent
     day12.cpp
     day13.cpp
     day14.cpp
+    day15.cpp
     spinner.cpp
     threading.cpp
     util.cpp)

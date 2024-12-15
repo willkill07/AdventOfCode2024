@@ -22,6 +22,10 @@ struct ParsedData {
   std::vector<long> counts;
 };
 
+static constexpr auto Div = []<std::integral T>(T a, std::same_as<T> auto b) {
+  return std::pair{a / b, a % b};
+};
+
 static constexpr auto Digits = [](long value) {
   long digits{1};
   for (long num{10}; value >= num; num *= 10) {
@@ -35,7 +39,7 @@ static constexpr auto Split = [](long value, long digits) {
   for (long i = 1; i < digits; ++i) {
     divisor *= 10;
   }
-  return std::div(value, divisor);
+  return Div(value, divisor);
 };
 
 struct Data {
