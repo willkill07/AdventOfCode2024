@@ -23,15 +23,15 @@ namespace {
 constexpr unsigned Column(TimeType type) noexcept {
   switch (type) {
   case TimeType::File:
-    return 44;
+    return 48;
   case TimeType::Parse:
-    return 53;
+    return 57;
   case TimeType::Part1:
-    return 62;
+    return 66;
   case TimeType::Part2:
-    return 71;
+    return 75;
   case TimeType::Total:
-    return 80;
+    return 84;
   }
 }
 
@@ -40,14 +40,14 @@ constexpr unsigned Column(AnswerType type) noexcept {
   case AnswerType::Part1:
     return 8;
   case AnswerType::Part2:
-    return 26;
+    return 28;
   }
 }
 constexpr std::string_view Format(TimeType) noexcept {
   return "{:>4}{:2s}";
 }
 constexpr std::string_view Format(AnswerType) noexcept {
-  return "{: <15}";
+  return "{: <17}";
 }
 
 using TimeArgs = std::tuple<long, std::string_view>;
@@ -247,11 +247,18 @@ public:
     cv_.wait(lock, [&]() { return not data_.has_value(); });
   }
 
-  void SetLocation(unsigned index) {
+  void SetLocation(TimeType type) {
     if (not has_tty_) {
       return;
     }
-    offset_.store(index);
+    offset_.store(Column(type));
+  }
+
+  void SetLocation(AnswerType type) {
+    if (not has_tty_) {
+      return;
+    }
+    offset_.store(Column(type));
   }
 
   [[nodiscard]] bool HasTTY() const noexcept {

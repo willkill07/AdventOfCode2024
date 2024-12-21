@@ -65,6 +65,8 @@ struct Point {
     return Point{*this} -= dir;
   }
 
+  [[nodiscard]] constexpr inline auto operator<=>(Point const& rhs) const noexcept = default;
+
   [[nodiscard]] constexpr inline bool operator==(Point const& rhs) const noexcept = default;
 
   [[nodiscard]] constexpr inline std::size_t Index(std::integral auto dim) const noexcept {

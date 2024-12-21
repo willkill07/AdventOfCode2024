@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <concepts>
+#include <cstddef>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -78,12 +79,12 @@ template <typename T, typename Allocator = std::allocator<T>> class CircularBuff
     }
 
     constexpr Iterator& operator+=(difference_type n) noexcept {
-      index_ += n;
+      index_ = static_cast<std::size_t>(static_cast<std::ptrdiff_t>(index_) + n);
       return *this;
     }
 
     constexpr Iterator& operator-=(difference_type n) noexcept {
-      index_ -= n;
+      index_ = static_cast<std::size_t>(static_cast<std::ptrdiff_t>(index_) - n);
       return *this;
     }
 
@@ -93,6 +94,10 @@ template <typename T, typename Allocator = std::allocator<T>> class CircularBuff
 
     constexpr Iterator operator-(difference_type n) const noexcept {
       return (Iterator{*this} -= n);
+    }
+
+    constexpr std::ptrdiff_t operator-(Iterator const& other) const noexcept {
+      return static_cast<std::ptrdiff_t>(other.index_) - static_cast<std::ptrdiff_t>(index_);
     }
 
     friend constexpr Iterator operator+(difference_type n, Iterator const& self) noexcept {

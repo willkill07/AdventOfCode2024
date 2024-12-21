@@ -20,6 +20,11 @@ target_sources(Advent
     day13.cpp
     day14.cpp
     day15.cpp
+    day16.cpp
+    day17.cpp
+    day18.cpp
+    day19.cpp
+    day20.cpp
     spinner.cpp
     threading.cpp
     util.cpp)

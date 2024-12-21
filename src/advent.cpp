@@ -24,6 +24,11 @@ import day12;
 import day13;
 import day14;
 import day15;
+import day16;
+import day17;
+import day18;
+import day19;
+import day20;
 import spinner;
 import threading;
 import util;
@@ -102,7 +107,12 @@ template <> struct std::formatter<TimingStats> {
                                "💻"sv,
                                "🕹️"sv,
                                "🤖"sv,
-                               "📦"sv};
+                               "📦"sv,
+                               "🦌"sv,
+                               "🖥️"sv,
+                               "🧱"sv,
+                               "🧻"sv,
+                               "🏎️"sv};
   if (num >= e.size()) {
     return "??";
   } else {
@@ -117,13 +127,13 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
   using ClockType = std::chrono::steady_clock;
 
   if (spinner.HasTTY()) {
-    std::print("│  {0:02d} │ {1:15s} │ {1:15s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {2:2s} │",
+    std::print("│  {0:02d} │ {1:17s} │ {1:17s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {1:6s} │ {2:2s} │",
                day_num,
                "",
                Emoji(day_num));
     std::cout.flush();
     spinner.Enable();
-    spinner.SetLocation(44);
+    spinner.SetLocation(TimeType::File);
   }
 
   // File IO
@@ -137,7 +147,7 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
   if (spinner.HasTTY()) {
     auto [time, units] = GetTimeAndUnits(io_time / TimingStats::repetitions);
     spinner.PutTime(TimeType::File, time, units);
-    spinner.SetLocation(53);
+    spinner.SetLocation(TimeType::Parse);
   }
 
   // Parsing
@@ -151,7 +161,7 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
   if (spinner.HasTTY()) {
     auto [time, units] = GetTimeAndUnits(parse_time / TimingStats::repetitions);
     spinner.PutTime(TimeType::Parse, time, units);
-    spinner.SetLocation(62);
+    spinner.SetLocation(TimeType::Part1);
   }
 
   // Part 1
@@ -162,7 +172,13 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
   }
   ClockType::time_point t3 = ClockType::now();
   auto const part1_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count();
-  auto p1 = std::to_string(part1);
+  auto p1 = [&] {
+    if constexpr (std::is_constructible_v<std::string, decltype(part1)>) {
+      return part1;
+    } else {
+      return std::to_string(part1);
+    }
+  }();
   if (mask) {
     std::ranges::fill(p1, 'X');
   }
@@ -170,7 +186,7 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
     auto [time, units] = GetTimeAndUnits(part1_time / TimingStats::repetitions);
     spinner.PutTime(TimeType::Part1, time, units);
     spinner.PutAnswer(AnswerType::Part1, p1);
-    spinner.SetLocation(71);
+    spinner.SetLocation(TimeType::Part2);
   }
 
   // Part 2
@@ -181,7 +197,13 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
   }
   ClockType::time_point const t4 = ClockType::now();
   auto const part2_time = std::chrono::duration_cast<std::chrono::nanoseconds>(t4 - t3).count();
-  auto p2 = std::to_string(part2);
+  auto p2 = [&] {
+    if constexpr (std::is_constructible_v<std::string, decltype(part2)>) {
+      return part2;
+    } else {
+      return std::to_string(part2);
+    }
+  }();
   if (mask) {
     std::ranges::fill(p2, 'X');
   }
@@ -198,7 +220,7 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
     std::println("");
     std::cout.flush();
   } else {
-    std::println("│  {:02d} │ {: <15} │ {: >15} │ {} │ {:s} │",
+    std::println("│  {:02d} │ {: <17} │ {: <17} │ {} │ {:s} │",
                  day_num,
                  std::move(p1),
                  std::move(p2),
@@ -222,7 +244,12 @@ constexpr std::array DAYS{SolveDay<&Day01Parse, &Day01Part1, &Day01Part2>,
                           SolveDay<&Day12Parse, &Day12Part1, &Day12Part2>,
                           SolveDay<&Day13Parse, &Day13Part1, &Day13Part2>,
                           SolveDay<&Day14Parse, &Day14Part1, &Day14Part2>,
-                          SolveDay<&Day15Parse, &Day15Part1, &Day15Part2>};
+                          SolveDay<&Day15Parse, &Day15Part1, &Day15Part2>,
+                          SolveDay<&Day16Parse, &Day16Part1, &Day16Part2>,
+                          SolveDay<&Day17Parse, &Day17Part1, &Day17Part2>,
+                          SolveDay<&Day18Parse, &Day18Part1, &Day18Part2>,
+                          SolveDay<&Day19Parse, &Day19Part1, &Day19Part2>,
+                          SolveDay<&Day20Parse, &Day20Part1, &Day20Part2>};
 
 int main(int argc, char* argv[]) {
   bool const has_tty{static_cast<bool>(::isatty(STDOUT_FILENO))};
@@ -244,16 +271,16 @@ int main(int argc, char* argv[]) {
 
   TimingStats stats;
   // clang-format off
-  std::println("      ╭───────────────────────────────────┬────────────────────────────────────────────╮");
-  std::println("      │              Answers              │                   Timing                   │");
-  std::println("╭─────┼─────────────────┬─────────────────┼────────┬────────┬────────┬────────┬────────┼────╮");
-  std::println("│ Day │          Part 1 │          Part 2 │  I/O   │ Parse  │ Part 1 │ Part 2 │ Total  │ 🏆 │");
-  std::println("├─────┼─────────────────┼─────────────────┼────────┼────────┼────────┼────────┼────────┼────┤");
+  std::println("      ╭───────────────────────────────────────┬────────────────────────────────────────────╮");
+  std::println("      │                Answers                │                   Timing                   │");
+  std::println("╭─────┼───────────────────┬───────────────────┼────────┬────────┬────────┬────────┬────────┼────╮");
+  std::println("│ Day │ Part 1            │ Part 2            │  I/O   │ Parse  │ Part 1 │ Part 2 │ Total  │ 🏆 │");
+  std::println("├─────┼───────────────────┼───────────────────┼────────┼────────┼────────┼────────┼────────┼────┤");
   for (auto&& [day, fn] : std::views::zip(std::views::iota(1U), DAYS)) {
     stats += fn(spinner, day);
   }
-  std::println("╰─────┼─────────────────┴─────────────────┼────────┼────────┼────────┼────────┼────────┼────╯");
-  std::println("      │ AoC++ 2024 in C++23 by willkill07 │ {} │", stats);
-  std::println("      ╰───────────────────────────────────┴────────┴────────┴────────┴────────┴────────╯");
+  std::println("╰─────┼───────────────────┴───────────────────┼────────┼────────┼────────┼────────┼────────┼────╯");
+  std::println("      │   AoC++ 2024 in C++23 by willkill07   │ {} │", stats);
+  std::println("      ╰───────────────────────────────────────┴────────┴────────┴────────┴────────┴────────╯");
   // clang-format on
 }
