@@ -52,8 +52,8 @@ static inline constexpr unsigned Shift(auto val) noexcept {
   return static_cast<unsigned>(val + 9);
 }
 
-static inline constexpr unsigned ShiftWindow(unsigned prev, unsigned current, auto next) noexcept {
-  return (current - 19U * 19U * 19U * prev) * 19U + Shift(next);
+static inline constexpr unsigned ShiftWindow(unsigned prev, unsigned current, int next) noexcept {
+  return 19U * current - (19U * 19U * 19U * 19U) * prev + Shift(next);
 }
 
 export int Day22Part2(Day22ParsedType const& data, [[maybe_unused]] Day22AnswerType const& answer) {

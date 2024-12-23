@@ -1,6 +1,6 @@
-#include <atomic>
 module;
 
+#include <atomic>
 #include <functional>
 #include <ranges>
 #include <thread>
