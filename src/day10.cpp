@@ -67,7 +67,7 @@ void TraverseFrom(GridWithInfo const& data, std::atomic_long& result, Point cons
     if (char const curr_height{grid(curr)}; curr_height == '9') {
       TransparentInsert(seen, curr);
     } else {
-      #pragma unroll
+#pragma unroll
       for (Dir const dir : {Dir::Up, Dir::Down, Dir::Left, Dir::Right}) {
         if (Point const next{curr + dir};           //
             (0 <= next.x and next.x < data.dim) and //
@@ -86,8 +86,7 @@ export Day10AnswerType Day10Part1(Day10ParsedType const& data) noexcept {
   threading::ParallelForEach(data.trailheads,
                              std::bind_front(TraverseFrom<ankerl::unordered_dense::set<Point, Hash>>,
                                              std::cref(data),
-                                             std::ref(result)),
-                             threading::GetNumThreads() / 2);
+                                             std::ref(result)));
   return result;
 }
 
@@ -95,8 +94,6 @@ export Day10AnswerType Day10Part2(Day10ParsedType const& data,
                                   [[maybe_unused]] Day10AnswerType const& answer) {
   std::atomic_long result{0};
   threading::ParallelForEach(
-      data.trailheads,
-      std::bind_front(TraverseFrom<std::vector<Point>>, std::cref(data), std::ref(result)),
-      threading::GetNumThreads() / 2);
+      data.trailheads, std::bind_front(TraverseFrom<std::vector<Point>>, std::cref(data), std::ref(result)));
   return result;
 }

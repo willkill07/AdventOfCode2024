@@ -29,6 +29,8 @@ import day17;
 import day18;
 import day19;
 import day20;
+import day21;
+import day22;
 import spinner;
 import threading;
 import util;
@@ -92,27 +94,9 @@ template <> struct std::formatter<TimingStats> {
 
 [[nodiscard]] constexpr std::string_view Emoji(std::size_t num) {
   using std::string_view_literals::operator""sv;
-  constexpr std::array const e{""sv,
-                               "🍪"sv,
-                               "👺"sv,
-                               "🎨"sv,
-                               "🎥"sv,
-                               "🔥"sv,
-                               "🐱"sv,
-                               "🧮"sv,
-                               "💨"sv,
-                               "💥"sv,
-                               "🤩"sv,
-                               "🐠"sv,
-                               "💻"sv,
-                               "🕹️"sv,
-                               "🤖"sv,
-                               "📦"sv,
-                               "🦌"sv,
-                               "🖥️"sv,
-                               "🧱"sv,
-                               "🧻"sv,
-                               "🏎️"sv};
+  constexpr std::array const e{""sv,   "🍪"sv, "👺"sv, "🎨"sv, "🎥"sv, "🔥"sv, "🐱"sv, "🧮"sv,
+                               "💨"sv, "💥"sv, "🤩"sv, "🐠"sv, "💻"sv, "🕹️"sv, "🤖"sv, "📦"sv,
+                               "🦌"sv, "🖥️"sv, "🧱"sv, "🧻"sv, "🏎️"sv, "🔢"sv, "🍌"sv};
   if (num >= e.size()) {
     return "??";
   } else {
@@ -230,26 +214,18 @@ template <auto ParseFn, auto Part1Fn, auto Part2Fn>
   return stats;
 }
 
-constexpr std::array DAYS{SolveDay<&Day01Parse, &Day01Part1, &Day01Part2>,
-                          SolveDay<&Day02Parse, &Day02Part1, &Day02Part2>,
-                          SolveDay<&Day03Parse, &Day03Part1, &Day03Part2>,
-                          SolveDay<&Day04Parse, &Day04Part1, &Day04Part2>,
-                          SolveDay<&Day05Parse, &Day05Part1, &Day05Part2>,
-                          SolveDay<&Day06Parse, &Day06Part1, &Day06Part2>,
-                          SolveDay<&Day07Parse, &Day07Part1, &Day07Part2>,
-                          SolveDay<&Day08Parse, &Day08Part1, &Day08Part2>,
-                          SolveDay<&Day09Parse, &Day09Part1, &Day09Part2>,
-                          SolveDay<&Day10Parse, &Day10Part1, &Day10Part2>,
-                          SolveDay<&Day11Parse, &Day11Part1, &Day11Part2>,
-                          SolveDay<&Day12Parse, &Day12Part1, &Day12Part2>,
-                          SolveDay<&Day13Parse, &Day13Part1, &Day13Part2>,
-                          SolveDay<&Day14Parse, &Day14Part1, &Day14Part2>,
-                          SolveDay<&Day15Parse, &Day15Part1, &Day15Part2>,
-                          SolveDay<&Day16Parse, &Day16Part1, &Day16Part2>,
-                          SolveDay<&Day17Parse, &Day17Part1, &Day17Part2>,
-                          SolveDay<&Day18Parse, &Day18Part1, &Day18Part2>,
-                          SolveDay<&Day19Parse, &Day19Part1, &Day19Part2>,
-                          SolveDay<&Day20Parse, &Day20Part1, &Day20Part2>};
+constexpr std::array DAYS{
+    SolveDay<&Day01Parse, &Day01Part1, &Day01Part2>, SolveDay<&Day02Parse, &Day02Part1, &Day02Part2>,
+    SolveDay<&Day03Parse, &Day03Part1, &Day03Part2>, SolveDay<&Day04Parse, &Day04Part1, &Day04Part2>,
+    SolveDay<&Day05Parse, &Day05Part1, &Day05Part2>, SolveDay<&Day06Parse, &Day06Part1, &Day06Part2>,
+    SolveDay<&Day07Parse, &Day07Part1, &Day07Part2>, SolveDay<&Day08Parse, &Day08Part1, &Day08Part2>,
+    SolveDay<&Day09Parse, &Day09Part1, &Day09Part2>, SolveDay<&Day10Parse, &Day10Part1, &Day10Part2>,
+    SolveDay<&Day11Parse, &Day11Part1, &Day11Part2>, SolveDay<&Day12Parse, &Day12Part1, &Day12Part2>,
+    SolveDay<&Day13Parse, &Day13Part1, &Day13Part2>, SolveDay<&Day14Parse, &Day14Part1, &Day14Part2>,
+    SolveDay<&Day15Parse, &Day15Part1, &Day15Part2>, SolveDay<&Day16Parse, &Day16Part1, &Day16Part2>,
+    SolveDay<&Day17Parse, &Day17Part1, &Day17Part2>, SolveDay<&Day18Parse, &Day18Part1, &Day18Part2>,
+    SolveDay<&Day19Parse, &Day19Part1, &Day19Part2>, SolveDay<&Day20Parse, &Day20Part1, &Day20Part2>,
+    SolveDay<&Day21Parse, &Day21Part1, &Day21Part2>, SolveDay<&Day22Parse, &Day22Part1, &Day22Part2>};
 
 int main(int argc, char* argv[]) {
   bool const has_tty{static_cast<bool>(::isatty(STDOUT_FILENO))};

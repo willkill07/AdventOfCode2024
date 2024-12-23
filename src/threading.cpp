@@ -1,3 +1,4 @@
+#include <atomic>
 module;
 
 #include <functional>
@@ -15,7 +16,7 @@ export module threading;
 namespace threading {
 
 export unsigned GetNumThreads() {
-  static unsigned const THREADS{std::thread::hardware_concurrency() / 2};
+  static unsigned const THREADS{std::thread::hardware_concurrency()};
   return THREADS;
 }
 
@@ -49,6 +50,28 @@ void ParallelForEach(Range&& range, std::invocable<std::ranges::range_reference_
     });
   }
   GetThreadPool().wait_for_tasks();
+}
+
+
+export template <std::ranges::random_access_range Range, typename T>
+T ParallelReduceAdd(Range&& range, std::invocable<std::ranges::range_reference_t<Range>> auto&& fn, T init, unsigned threads = GetNumThreads()) {
+  std::size_t const n{range.size()};
+  auto const next_offsets =
+      std::views::iota(0u, threads + 1) |
+      std::views::transform([&](unsigned i) { return static_cast<long>(i * n) / threads; }) |
+      std::ranges::to<std::vector>();
+  T result{init};
+  for (auto const [curr, next] : std::views::adjacent<2>(next_offsets)) {
+    GetThreadPool().enqueue_detach([&range, &fn, &init, &result, curr, next] {
+      T val{init};
+      for (auto&& item : std::views::take(std::views::drop(range, curr), next - curr)) {
+        val = std::invoke(std::plus{}, val, std::invoke(fn, std::forward<decltype(item)>(item)));
+      }
+      std::atomic_ref{result}.fetch_add(val, std::memory_order_release);
+    });
+  }
+  GetThreadPool().wait_for_tasks();
+  return result;
 }
 
 export void Initialize() {
