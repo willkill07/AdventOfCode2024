@@ -23,15 +23,15 @@ namespace {
 constexpr unsigned Column(TimeType type) noexcept {
   switch (type) {
   case TimeType::File:
-    return 48;
+    return 69;
   case TimeType::Parse:
-    return 57;
+    return 78;
   case TimeType::Part1:
-    return 66;
+    return 87;
   case TimeType::Part2:
-    return 75;
+    return 96;
   case TimeType::Total:
-    return 84;
+    return 105;
   }
 }
 
