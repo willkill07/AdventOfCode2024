@@ -32,6 +32,8 @@ import day20;
 import day21;
 import day22;
 import day23;
+import day24;
+import day25;
 import spinner;
 import threading;
 import util;
@@ -95,9 +97,9 @@ template <> struct std::formatter<TimingStats> {
 
 [[nodiscard]] constexpr std::string_view Emoji(std::size_t num) {
   using std::string_view_literals::operator""sv;
-  constexpr std::array const e{""sv,   "🍪"sv, "👺"sv, "🎨"sv, "🎥"sv, "🔥"sv, "🐱"sv, "🧮"sv,
-                               "💨"sv, "💥"sv, "🤩"sv, "🐠"sv, "💻"sv, "🕹️"sv, "🤖"sv, "📦"sv,
-                               "🦌"sv, "🖥️"sv, "🧱"sv, "🧻"sv, "🏎️"sv, "🔢"sv, "🍌"sv, "🛜"sv};
+  constexpr std::array const e{""sv,   "🍪"sv, "👺"sv, "🎨"sv, "🎥"sv, "🔥"sv, "🐱"sv, "🧮"sv, "💨"sv,
+                               "💥"sv, "🤩"sv, "🐠"sv, "💻"sv, "🕹️"sv, "🤖"sv, "📦"sv, "🦌"sv, "🖥️"sv,
+                               "🧱"sv, "🧻"sv, "🏎️"sv, "🔢"sv, "🍌"sv, "🛜"sv, "➿"sv, "🔐"sv};
   if (num >= e.size()) {
     return "??";
   } else {
@@ -227,7 +229,8 @@ constexpr std::array DAYS{
     SolveDay<&Day17Parse, &Day17Part1, &Day17Part2>, SolveDay<&Day18Parse, &Day18Part1, &Day18Part2>,
     SolveDay<&Day19Parse, &Day19Part1, &Day19Part2>, SolveDay<&Day20Parse, &Day20Part1, &Day20Part2>,
     SolveDay<&Day21Parse, &Day21Part1, &Day21Part2>, SolveDay<&Day22Parse, &Day22Part1, &Day22Part2>,
-    SolveDay<&Day23Parse, &Day23Part1, &Day23Part2>};
+    SolveDay<&Day23Parse, &Day23Part1, &Day23Part2>, SolveDay<&Day24Parse, &Day24Part1, &Day24Part2>,
+    SolveDay<&Day25Parse, &Day25Part1, &Day25Part2>};
 
 int main(int argc, char* argv[]) {
   bool const has_tty{static_cast<bool>(::isatty(STDOUT_FILENO))};
