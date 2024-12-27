@@ -17,9 +17,9 @@ constexpr Dir RotateCounterClockwise(Dir dir) noexcept {
   return static_cast<Dir>((4 + std::to_underlying(dir) - 1) & 3);
 }
 
-static inline char Get(std::string_view map, int N, Point const& p) {
-  if (0 <= p.x and p.x < N and 0 <= p.y and p.y < N) {
-    return map[p.Index(N + 1)];
+static inline char Get(std::string_view map, int n, Point const& p) {
+  if (0 <= p.x and p.x < n and 0 <= p.y and p.y < n) {
+    return map[p.Index(n + 1)];
   } else {
     return 0;
   }
@@ -59,9 +59,9 @@ export Day12ParsedType Day12Parse(std::string_view input) noexcept {
               ++edges;
               // Part 2 solver -- count corners (double-counted)
               Dir const ccw{RotateCounterClockwise(dir)};
-              corners += (Get(input, n, curr + ccw) != plant or Get(input, n, curr + dir + ccw) == plant);
+              corners += (Get(input, n, curr + ccw) != plant or Get(input, n, (curr + ccw) + dir) == plant);
               Dir const cw{RotateClockwise(dir)};
-              corners += (Get(input, n, curr + cw) != plant or Get(input, n, curr + dir + cw) == plant);
+              corners += (Get(input, n, curr + cw) != plant or Get(input, n, (curr + cw) + dir) == plant);
             }
           }
         }

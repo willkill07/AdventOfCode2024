@@ -2,13 +2,10 @@ module;
 
 #include <algorithm>
 #include <array>
-#include <deque>
 #include <limits>
 #include <ranges>
 #include <string_view>
 #include <vector>
-
-#include <print>
 
 #include "circular_buffer.hpp"
 
@@ -58,18 +55,14 @@ export Day16ParsedType Day16Parse(std::string_view maze) noexcept {
            }) {
         if (maze[next.pos] != '#' && next.cost < seen[next.pos][next.dir]) {
           // Find the next bucket.
-          if (next.dir == dir) {
-            todo_first.push_back(next);
-          } else {
-            todo_second.push_back(next);
-          }
+          (next.dir == dir ? todo_first : todo_second).push_back(next);
           seen[next.pos][next.dir] = next.cost;
         }
       }
     }
     std::swap(todo_first, todo_second);
   }
-  CircularBuffer<Data> todo{64};
+  CircularBuffer<Data> todo{32};
   std::vector visited(maze.size(), 0);
   for (auto dir : std::views::iota(0u, 4u)) {
     if (seen[end][dir] == lowest) {

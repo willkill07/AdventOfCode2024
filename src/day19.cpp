@@ -1,15 +1,15 @@
 module;
 
+#include <atomic>
 #include <ranges>
 #include <string_view>
 #include <vector>
 
-
-#include <print>
-
 #include <ctre.hpp>
 
 export module day19;
+
+import threading;
 
 export using Day19ParsedType = std::pair<std::size_t, std::size_t>;
 export using Day19AnswerType = std::size_t;
@@ -37,7 +37,8 @@ export Day19ParsedType Day19Parse(std::string_view input) noexcept {
   auto prefixes = ctre::split<", ">(input.substr(0, split)) |
                   std::views::transform([](auto&& match) { return match.view(); });
   auto words = ctre::split<"\n">(input.substr(split + 2)) |
-               std::views::transform([](auto&& match) { return match.view(); });
+               std::views::transform([](auto&& match) { return match.view(); }) |
+               std::ranges::to<std::vector>();
 
   std::vector<Node> trie;
   trie.reserve(800);
@@ -62,10 +63,10 @@ export Day19ParsedType Day19Parse(std::string_view input) noexcept {
     trie[i].SetTowel();
   }
 
-  std::size_t part_one{0}, part_two{0};
-  std::vector<std::size_t> ways;
-  ways.reserve(64);
-  for (auto design : words) {
+  std::size_t part1(std::numeric_limits<std::size_t>::max()), part2(std::numeric_limits<std::size_t>::max());
+  thread_local std::vector<std::size_t> ways;
+  threading::ParallelForEach(words, [&trie, &part1, &part2](std::string_view design) {
+    ways.reserve(64);
     std::size_t const size{design.size()};
     ways.clear();
     ways.resize(size + 1, 0);
@@ -84,12 +85,10 @@ export Day19ParsedType Day19Parse(std::string_view input) noexcept {
         }
       }
     }
-    // Last element is the total possible combinations.
-    std::size_t const total{ways[size]};
-    part_one += (total > 0);
-    part_two += total;
-  }
-  return std::pair{part_one, part_two};
+    std::atomic_ref{part1}.fetch_add(ways.back() > 0);
+    std::atomic_ref{part2}.fetch_add(ways.back());
+  });
+  return std::pair{part1, part2};
 }
 
 export Day19AnswerType Day19Part1(Day19ParsedType const& data) noexcept {
