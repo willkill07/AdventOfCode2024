@@ -19,7 +19,7 @@ export using Day01ParsedType = std::vector<std::pair<long, long>>;
 export using Day01AnswerType = long;
 
 export Day01ParsedType Day01Parse(std::string_view input) noexcept {
-  auto res = ctre::search_all<R"((\d+) +(\d+))">(input) | std::views::transform([](auto x) {
+  auto res = ctre::search_all<R"((\d+)   (\d+))">(input) | std::views::transform([](auto x) {
                auto [_, a, b] = x;
                return std::pair{a.template to_number<long>(), b.template to_number<long>()};
              }) |

@@ -135,7 +135,7 @@ export std::string Day24Part2(Circuit const& circuit, [[maybe_unused]] unsigned 
         }
       }
     }
-  }, /*threads=*/4);
+  }, /*threads=*/threading::GetNumThreads() / 2);
   std::ranges::sort(wrong);
   return std::ranges::to<std::string>(std::views::join_with(wrong, ','));
 }

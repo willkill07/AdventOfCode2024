@@ -1,5 +1,6 @@
 module;
 
+#include <atomic>
 #include <algorithm>
 #include <charconv>
 #include <concepts>
@@ -10,9 +11,10 @@ module;
 #include <vector>
 
 #include <ctre.hpp>
-#include <print>
 
 export module day07;
+
+import threading;
 
 template <bool B> constexpr static inline auto Part2 = std::bool_constant<B>{};
 
@@ -88,13 +90,13 @@ export Day07AnswerType Day07Part1(Day07ParsedType const& data) noexcept {
   long p1{0};
   p2 = 0;
   // it's faster to conditionally process part 2 with part 1
-  for (auto const& t : data) {
+  threading::ParallelForEach(data, [&] (Trial const& t) {
     if (long v1{t.Check(Part2<false>)}; v1 > 0) {
-      p1 += v1;
+      std::atomic_ref{p1}.fetch_add(v1, std::memory_order_release);
     } else if (long v2{t.Check(Part2<true>)}; v2 > 0) {
-      p2 += v2;
+      std::atomic_ref{p2}.fetch_add(v2, std::memory_order_release);
     }
-  }
+  }, /*threads=*/threading::GetNumThreads() / 2);
   return p1;
 }
 
